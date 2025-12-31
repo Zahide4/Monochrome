@@ -12,18 +12,28 @@ const auth = require('./middleware/auth');
 
 const app = express();
 app.use(express.json());
-app.use(cors());
+
+// --- EXPLICIT CORS CONFIGURATION ---
+app.use(cors({
+  origin: ["https://monochrome-beryl.vercel.app", "http://localhost:5173"],
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true
+}));
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
+// Robust DB Connection
 mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('MongoDB Connected'))
-  .catch(err => console.log(err));
+  .then(() => console.log('✅ MongoDB Connected'))
+  .catch(err => {
+    console.error('❌ MongoDB Connection Error:', err);
+    // Don't exit, just log. Server handles 500s better than crashing.
+  });
 
 // --- Auth Routes ---
 app.post('/api/register', async (req, res) => {
-  const { email, username, password } = req.body;
   try {
+    const { email, username, password } = req.body;
     const existingUser = await User.findOne({ email });
     if(existingUser) return res.status(400).send('Email already exists');
     const salt = await bcrypt.genSalt(10);
@@ -31,25 +41,34 @@ app.post('/api/register', async (req, res) => {
     const user = new User({ email, username, password: hashedPassword });
     await user.save();
     res.status(201).send('User registered');
-  } catch (err) { res.status(400).send(err.message); }
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Server Error during Register');
+  }
 });
 
 app.post('/api/login', async (req, res) => {
-  const { email, password } = req.body;
-  const user = await User.findOne({ email });
-  if (!user) return res.status(400).send('User not found');
-  if (!user.password) return res.status(400).send('Please login with Google');
-  const validPass = await bcrypt.compare(password, user.password);
-  if (!validPass) return res.status(400).send('Invalid password');
-  const token = jwt.sign({ _id: user._id, username: user.username }, process.env.JWT_SECRET);
-  res.json({ token, user: { id: user._id, username: user.username, email: user.email } });
+  try {
+    const { email, password } = req.body;
+    const user = await User.findOne({ email });
+    if (!user) return res.status(400).send('User not found');
+    if (!user.password) return res.status(400).send('Please login with Google');
+    const validPass = await bcrypt.compare(password, user.password);
+    if (!validPass) return res.status(400).send('Invalid password');
+    const token = jwt.sign({ _id: user._id, username: user.username }, process.env.JWT_SECRET);
+    res.json({ token, user: { id: user._id, username: user.username, email: user.email } });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Server Error during Login');
+  }
 });
 
 app.post('/api/google-login', async (req, res) => {
-  const { token } = req.body;
   try {
+    const { token } = req.body;
     const ticket = await googleClient.verifyIdToken({ idToken: token, audience: process.env.GOOGLE_CLIENT_ID });
     const { email, name, sub } = ticket.getPayload();
+    
     let user = await User.findOne({ email });
     if (!user) {
       user = new User({ email, username: name, googleId: sub });
@@ -57,27 +76,34 @@ app.post('/api/google-login', async (req, res) => {
     }
     const appToken = jwt.sign({ _id: user._id, username: user.username }, process.env.JWT_SECRET);
     res.json({ token: appToken, user: { id: user._id, username: user.username, email: user.email } });
-  } catch (error) { res.status(400).send('Google Auth Failed'); }
+  } catch (error) {
+    console.error('Google Auth Error:', error);
+    res.status(400).send('Google Auth Failed');
+  }
 });
 
-// --- Post Routes ---
+// --- Post Routes (Now with Try/Catch) ---
 
 app.get('/api/posts', async (req, res) => {
-  const token = req.header('Authorization')?.replace('Bearer ', '');
-  let query = { isPrivate: false };
-  if (token) {
-    try {
-      jwt.verify(token, process.env.JWT_SECRET);
-      query = {}; 
-    } catch (e) {}
+  try {
+    const token = req.header('Authorization')?.replace('Bearer ', '');
+    let query = { isPrivate: false };
+    if (token) {
+      try { jwt.verify(token, process.env.JWT_SECRET); query = {}; } catch (e) {}
+    }
+    const posts = await Post.find(query).populate('author', 'username').sort({ createdAt: -1 });
+    res.json(posts);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server Error fetching posts' });
   }
-  const posts = await Post.find(query).populate('author', 'username').sort({ createdAt: -1 });
-  res.json(posts);
 });
 
 app.get('/api/posts/mine', auth, async (req, res) => {
-  const posts = await Post.find({ author: req.user._id }).populate('author', 'username').sort({ createdAt: -1 });
-  res.json(posts);
+  try {
+    const posts = await Post.find({ author: req.user._id }).populate('author', 'username').sort({ createdAt: -1 });
+    res.json(posts);
+  } catch (err) { res.status(500).send('Server Error'); }
 });
 
 app.get('/api/posts/:id', async (req, res) => {
@@ -90,53 +116,47 @@ app.get('/api/posts/:id', async (req, res) => {
       jwt.verify(token, process.env.JWT_SECRET);
     }
     res.json(post);
-  } catch (err) { res.status(403).json({ message: 'Unauthorized' }); }
+  } catch (err) { res.status(403).json({ message: 'Unauthorized or Error' }); }
 });
 
 app.post('/api/posts', auth, async (req, res) => {
-  const post = new Post({ ...req.body, author: req.user._id });
-  await post.save();
-  res.json(post);
+  try {
+    const post = new Post({ ...req.body, author: req.user._id });
+    await post.save();
+    res.json(post);
+  } catch (err) { res.status(500).send('Error creating post'); }
 });
 
-// Toggle Reaction Route
 app.put('/api/posts/:id/react', auth, async (req, res) => {
-  const { emoji } = req.body;
   try {
+    const { emoji } = req.body;
     const post = await Post.findById(req.params.id);
     if (!post) return res.status(404).send('Post not found');
-
-    // Check if user already reacted with this specific emoji
     const existingIndex = post.reactions.findIndex(r => r.user.toString() === req.user._id && r.emoji === emoji);
-
-    if (existingIndex > -1) {
-      // Remove reaction (Toggle off)
-      post.reactions.splice(existingIndex, 1);
-    } else {
-      // Add reaction (Toggle on)
-      post.reactions.push({ user: req.user._id, emoji });
-    }
-    
+    if (existingIndex > -1) post.reactions.splice(existingIndex, 1);
+    else post.reactions.push({ user: req.user._id, emoji });
     await post.save();
-    // Return the full post so UI updates instantly
     const updatedPost = await Post.findById(req.params.id).populate('author', 'username');
     res.json(updatedPost);
-  } catch (err) {
-    res.status(500).send(err.message);
-  }
+  } catch (err) { res.status(500).send(err.message); }
 });
 
 app.put('/api/posts/:id', auth, async (req, res) => {
-  const post = await Post.findOne({ _id: req.params.id, author: req.user._id });
-  if (!post) return res.status(403).send('Not authorized');
-  Object.assign(post, req.body);
-  await post.save();
-  res.json(post);
+  try {
+    const post = await Post.findOne({ _id: req.params.id, author: req.user._id });
+    if (!post) return res.status(403).send('Not authorized');
+    Object.assign(post, req.body);
+    await post.save();
+    res.json(post);
+  } catch (err) { res.status(500).send('Error updating'); }
 });
 
 app.delete('/api/posts/:id', auth, async (req, res) => {
-  await Post.findOneAndDelete({ _id: req.params.id, author: req.user._id });
-  res.json({ message: 'Deleted' });
+  try {
+    await Post.findOneAndDelete({ _id: req.params.id, author: req.user._id });
+    res.json({ message: 'Deleted' });
+  } catch (err) { res.status(500).send('Error deleting'); }
 });
 
-app.listen(process.env.PORT, () => console.log('Server running'));
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
