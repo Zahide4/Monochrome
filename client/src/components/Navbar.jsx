@@ -6,7 +6,7 @@ export default function Navbar() {
   return (
     <nav className="navbar">
       <div className="nav-inner">
-        <Link to="/" className="nav-logo">The Journal.</Link>
+        <Link to="/" className="nav-logo">Monochrome.</Link>
         <div className="nav-links">
           <Link to="/">READ</Link>
           {user ? (

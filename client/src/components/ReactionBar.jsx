@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 
-const EMOJIS = ['👍', '❤️', '🔥', '👏', '😲'];
+const EMOJIS = ['👍', '❤️'];
 
 export default function ReactionBar({ post, onUpdate }) {
   const { user, token } = useAuth();
