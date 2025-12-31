@@ -17,7 +17,7 @@ export default function ReactionBar({ post, onUpdate }) {
   const handleReact = async (emoji) => {
     if (!user) return alert("Please login to react");
     try {
-      const res = await axios.put(`http://localhost:5000/api/posts/${post._id}/react`, 
+      const res = await axios.put(`https://monochrome-agc7.onrender.com/api/posts/${post._id}/react`, 
         { emoji }, 
         { headers: { Authorization: `Bearer ${token}` } }
       );

@@ -9,15 +9,15 @@ export default function CreatePost() {
   const [formData, setFormData] = useState({ title: '', content: '', isPrivate: false });
   useEffect(() => {
     if (id) {
-      axios.get(`http://localhost:5000/api/posts/${id}`, { headers: { Authorization: `Bearer ${token}` } })
+      axios.get(`https://monochrome-agc7.onrender.com/api/posts/${id}`, { headers: { Authorization: `Bearer ${token}` } })
         .then(res => setFormData({ title: res.data.title, content: res.data.content, isPrivate: res.data.isPrivate }));
     }
   }, [id, token]);
   const handleSubmit = async (e) => {
     e.preventDefault();
     const config = { headers: { Authorization: `Bearer ${token}` } };
-    if (id) await axios.put(`http://localhost:5000/api/posts/${id}`, formData, config);
-    else await axios.post('http://localhost:5000/api/posts', formData, config);
+    if (id) await axios.put(`https://monochrome-agc7.onrender.com/api/posts/${id}`, formData, config);
+    else await axios.post('https://monochrome-agc7.onrender.com/api/posts', formData, config);
     navigate('/mine');
   };
   return (

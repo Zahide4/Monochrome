@@ -12,7 +12,7 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post('http://localhost:5000/api/login', data);
+      const res = await axios.post('https://monochrome-agc7.onrender.com/api/login', data);
       login(res.data.token, res.data.user);
       navigate('/');
     } catch (err) { alert('Login failed. Check credentials.'); }
@@ -20,7 +20,7 @@ export default function Login() {
 
   const handleGoogleSuccess = async (credentialResponse) => {
     try {
-      const res = await axios.post('http://localhost:5000/api/google-login', {
+      const res = await axios.post('https://monochrome-agc7.onrender.com/api/google-login', {
         token: credentialResponse.credential
       });
       login(res.data.token, res.data.user);

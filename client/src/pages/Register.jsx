@@ -12,7 +12,7 @@ export default function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:5000/api/register', data);
+      await axios.post('https://monochrome-agc7.onrender.com/api/register', data);
       // After manual register, go to login
       navigate('/login');
     } catch (err) { alert(err.response?.data || 'Registration failed'); }
@@ -21,7 +21,7 @@ export default function Register() {
   const handleGoogleSuccess = async (credentialResponse) => {
     try {
       // We use the same 'google-login' endpoint because it handles BOTH Login and Register (Upsert)
-      const res = await axios.post('http://localhost:5000/api/google-login', {
+      const res = await axios.post('https://monochrome-agc7.onrender.com/api/google-login', {
         token: credentialResponse.credential
       });
 

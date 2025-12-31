@@ -6,13 +6,13 @@ export default function MyPosts() {
   const [posts, setPosts] = useState([]);
   const { token } = useAuth();
   const fetchPosts = async () => {
-    const res = await axios.get('http://localhost:5000/api/posts/mine', { headers: { Authorization: `Bearer ${token}` } });
+    const res = await axios.get('https://monochrome-agc7.onrender.com/api/posts/mine', { headers: { Authorization: `Bearer ${token}` } });
     setPosts(res.data);
   };
   useEffect(() => { fetchPosts(); }, []);
   const handleDelete = async (id) => {
     if(!confirm("Delete this record?")) return;
-    await axios.delete(`http://localhost:5000/api/posts/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+    await axios.delete(`https://monochrome-agc7.onrender.com/api/posts/${id}`, { headers: { Authorization: `Bearer ${token}` } });
     fetchPosts();
   };
   return (

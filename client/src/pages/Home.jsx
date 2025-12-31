@@ -11,7 +11,7 @@ export default function Home() {
   const fetchPosts = async () => {
     try {
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      const res = await axios.get('http://localhost:5000/api/posts', { headers });
+      const res = await axios.get('https://monochrome-agc7.onrender.com/api/posts', { headers });
       setPosts(res.data);
     } catch (err) {}
   };
