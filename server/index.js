@@ -13,7 +13,7 @@ const auth = require('./middleware/auth');
 const app = express();
 app.use(express.json());
 
-// --- CORS CONFIGURATION (Maintains your fix) ---
+// CORS Config
 app.use(cors({
   origin: ["https://monochrome-beryl.vercel.app", "http://localhost:5173"],
   methods: ["GET", "POST", "PUT", "DELETE"],
@@ -68,67 +68,55 @@ app.post('/api/google-login', async (req, res) => {
   } catch (error) { res.status(400).send('Google Auth Failed'); }
 });
 
-// --- POST ROUTES (UPDATED PRIVACY LOGIC) ---
+// --- POST ROUTES ---
 
-// 1. GET ALL POSTS (Feed)
 app.get('/api/posts', async (req, res) => {
   try {
     const token = req.header('Authorization')?.replace('Bearer ', '');
-    let query = { isPrivate: false }; // Default: Show only public
-
+    let query = { isPrivate: false };
     if (token) {
       try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        // LOGIC CHANGE: Show Public posts OR My Private posts
-        query = {
-          $or: [
-            { isPrivate: false },
-            { author: decoded._id }
-          ]
-        };
-      } catch (e) {
-        // Token invalid/expired: Stick to Public only
-      }
+        query = { $or: [ { isPrivate: false }, { author: decoded._id } ] };
+      } catch (e) {}
     }
-    
     const posts = await Post.find(query).populate('author', 'username').sort({ createdAt: -1 });
     res.json(posts);
   } catch (err) {
-    console.error(err);
+    console.error("Feed Error:", err);
     res.status(500).json({ message: 'Server Error' });
   }
 });
 
-// 2. GET SINGLE POST
+// FIXING THE 500 ERROR HERE
+app.get('/api/posts/mine', auth, async (req, res) => {
+  try {
+    // Explicitly casting user ID to ensure MongoDB query works
+    const userId = new mongoose.Types.ObjectId(req.user._id);
+    const posts = await Post.find({ author: userId }).populate('author', 'username').sort({ createdAt: -1 });
+    res.json(posts);
+  } catch (err) { 
+    console.error("My Logs Error:", err); // This logs to Render dashboard
+    res.status(500).send('Server Error fetching user posts'); 
+  }
+});
+
 app.get('/api/posts/:id', async (req, res) => {
   try {
     const post = await Post.findById(req.params.id).populate('author', 'username');
     if (!post) return res.status(404).json({ message: 'Post not found' });
-    
     if (post.isPrivate) {
       const token = req.header('Authorization')?.replace('Bearer ', '');
       if (!token) return res.status(403).json({ message: 'Unauthorized' });
-      
       try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        // LOGIC CHANGE: Strictly check if current user is the author
         if (post.author._id.toString() !== decoded._id) {
-            return res.status(403).json({ message: 'Access Denied: You are not the author.' });
+            return res.status(403).json({ message: 'Access Denied' });
         }
-      } catch (e) {
-        return res.status(403).json({ message: 'Unauthorized' });
-      }
+      } catch (e) { return res.status(403).json({ message: 'Unauthorized' }); }
     }
     res.json(post);
   } catch (err) { res.status(500).json({ message: 'Server Error' }); }
-});
-
-// 3. GET MY POSTS
-app.get('/api/posts/mine', auth, async (req, res) => {
-  try {
-    const posts = await Post.find({ author: req.user._id }).populate('author', 'username').sort({ createdAt: -1 });
-    res.json(posts);
-  } catch (err) { res.status(500).send('Server Error'); }
 });
 
 app.post('/api/posts', auth, async (req, res) => {
@@ -144,6 +132,10 @@ app.put('/api/posts/:id/react', auth, async (req, res) => {
     const { emoji } = req.body;
     const post = await Post.findById(req.params.id);
     if (!post) return res.status(404).send('Post not found');
+    
+    // Initialize reactions array if it doesn't exist (Fixes crash on old posts)
+    if (!post.reactions) post.reactions = [];
+
     const existingIndex = post.reactions.findIndex(r => r.user.toString() === req.user._id && r.emoji === emoji);
     if (existingIndex > -1) post.reactions.splice(existingIndex, 1);
     else post.reactions.push({ user: req.user._id, emoji });
