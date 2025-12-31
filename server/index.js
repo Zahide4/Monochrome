@@ -13,7 +13,7 @@ const auth = require('./middleware/auth');
 const app = express();
 app.use(express.json());
 
-// --- EXPLICIT CORS CONFIGURATION ---
+// --- CORS CONFIGURATION (Maintains your fix) ---
 app.use(cors({
   origin: ["https://monochrome-beryl.vercel.app", "http://localhost:5173"],
   methods: ["GET", "POST", "PUT", "DELETE"],
@@ -22,15 +22,11 @@ app.use(cors({
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
-// Robust DB Connection
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('✅ MongoDB Connected'))
-  .catch(err => {
-    console.error('❌ MongoDB Connection Error:', err);
-    // Don't exit, just log. Server handles 500s better than crashing.
-  });
+  .catch(err => console.error('❌ MongoDB Connection Error:', err));
 
-// --- Auth Routes ---
+// --- AUTH ROUTES ---
 app.post('/api/register', async (req, res) => {
   try {
     const { email, username, password } = req.body;
@@ -41,10 +37,7 @@ app.post('/api/register', async (req, res) => {
     const user = new User({ email, username, password: hashedPassword });
     await user.save();
     res.status(201).send('User registered');
-  } catch (err) {
-    console.error(err);
-    res.status(500).send('Server Error during Register');
-  }
+  } catch (err) { res.status(500).send(err.message); }
 });
 
 app.post('/api/login', async (req, res) => {
@@ -57,10 +50,7 @@ app.post('/api/login', async (req, res) => {
     if (!validPass) return res.status(400).send('Invalid password');
     const token = jwt.sign({ _id: user._id, username: user.username }, process.env.JWT_SECRET);
     res.json({ token, user: { id: user._id, username: user.username, email: user.email } });
-  } catch (err) {
-    console.error(err);
-    res.status(500).send('Server Error during Login');
-  }
+  } catch (err) { res.status(500).send('Login Error'); }
 });
 
 app.post('/api/google-login', async (req, res) => {
@@ -68,7 +58,6 @@ app.post('/api/google-login', async (req, res) => {
     const { token } = req.body;
     const ticket = await googleClient.verifyIdToken({ idToken: token, audience: process.env.GOOGLE_CLIENT_ID });
     const { email, name, sub } = ticket.getPayload();
-    
     let user = await User.findOne({ email });
     if (!user) {
       user = new User({ email, username: name, googleId: sub });
@@ -76,47 +65,70 @@ app.post('/api/google-login', async (req, res) => {
     }
     const appToken = jwt.sign({ _id: user._id, username: user.username }, process.env.JWT_SECRET);
     res.json({ token: appToken, user: { id: user._id, username: user.username, email: user.email } });
-  } catch (error) {
-    console.error('Google Auth Error:', error);
-    res.status(400).send('Google Auth Failed');
-  }
+  } catch (error) { res.status(400).send('Google Auth Failed'); }
 });
 
-// --- Post Routes (Now with Try/Catch) ---
+// --- POST ROUTES (UPDATED PRIVACY LOGIC) ---
 
+// 1. GET ALL POSTS (Feed)
 app.get('/api/posts', async (req, res) => {
   try {
     const token = req.header('Authorization')?.replace('Bearer ', '');
-    let query = { isPrivate: false };
+    let query = { isPrivate: false }; // Default: Show only public
+
     if (token) {
-      try { jwt.verify(token, process.env.JWT_SECRET); query = {}; } catch (e) {}
+      try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        // LOGIC CHANGE: Show Public posts OR My Private posts
+        query = {
+          $or: [
+            { isPrivate: false },
+            { author: decoded._id }
+          ]
+        };
+      } catch (e) {
+        // Token invalid/expired: Stick to Public only
+      }
     }
+    
     const posts = await Post.find(query).populate('author', 'username').sort({ createdAt: -1 });
     res.json(posts);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Server Error fetching posts' });
+    res.status(500).json({ message: 'Server Error' });
   }
 });
 
+// 2. GET SINGLE POST
+app.get('/api/posts/:id', async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id).populate('author', 'username');
+    if (!post) return res.status(404).json({ message: 'Post not found' });
+    
+    if (post.isPrivate) {
+      const token = req.header('Authorization')?.replace('Bearer ', '');
+      if (!token) return res.status(403).json({ message: 'Unauthorized' });
+      
+      try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        // LOGIC CHANGE: Strictly check if current user is the author
+        if (post.author._id.toString() !== decoded._id) {
+            return res.status(403).json({ message: 'Access Denied: You are not the author.' });
+        }
+      } catch (e) {
+        return res.status(403).json({ message: 'Unauthorized' });
+      }
+    }
+    res.json(post);
+  } catch (err) { res.status(500).json({ message: 'Server Error' }); }
+});
+
+// 3. GET MY POSTS
 app.get('/api/posts/mine', auth, async (req, res) => {
   try {
     const posts = await Post.find({ author: req.user._id }).populate('author', 'username').sort({ createdAt: -1 });
     res.json(posts);
   } catch (err) { res.status(500).send('Server Error'); }
-});
-
-app.get('/api/posts/:id', async (req, res) => {
-  try {
-    const post = await Post.findById(req.params.id).populate('author', 'username');
-    if (!post) return res.status(404).json({ message: 'Post not found' });
-    if (post.isPrivate) {
-      const token = req.header('Authorization')?.replace('Bearer ', '');
-      if (!token) throw new Error();
-      jwt.verify(token, process.env.JWT_SECRET);
-    }
-    res.json(post);
-  } catch (err) { res.status(403).json({ message: 'Unauthorized or Error' }); }
 });
 
 app.post('/api/posts', auth, async (req, res) => {
