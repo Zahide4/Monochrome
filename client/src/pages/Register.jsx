@@ -12,14 +12,14 @@ export default function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('https://elegant-blog-api.onrender.com/api/register', data);
+      await axios.post('https://monochrome-agc7.onrender.com/api/register', data);
       navigate('/login');
     } catch (err) { alert(err.response?.data || 'Registration failed'); }
   };
 
   const handleGoogleSuccess = async (credentialResponse) => {
     try {
-      const res = await axios.post('https://elegant-blog-api.onrender.com/api/google-login', {
+      const res = await axios.post('https://monochrome-agc7.onrender.com/api/google-login', {
         token: credentialResponse.credential
       });
       login(res.data.token, res.data.user);

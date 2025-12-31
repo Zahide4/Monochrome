@@ -14,7 +14,7 @@ export default function PostDetail() {
     const fetchPost = async () => {
       try {
         const headers = token ? { Authorization: `Bearer ${token}` } : {};
-        const res = await axios.get(`https://elegant-blog-api.onrender.com/api/posts/${id}`, { headers });
+        const res = await axios.get(`https://monochrome-agc7.onrender.com/api/posts/${id}`, { headers });
         setPost(res.data);
       } catch (err) { navigate('/'); }
     };

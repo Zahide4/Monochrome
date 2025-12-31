@@ -8,7 +8,7 @@ export default function MyPosts() {
   const { token } = useAuth();
 
   const fetchPosts = async () => {
-    const res = await axios.get('https://elegant-blog-api.onrender.com/api/posts/mine', { headers: { Authorization: `Bearer ${token}` } });
+    const res = await axios.get('https://monochrome-agc7.onrender.com/api/posts/mine', { headers: { Authorization: `Bearer ${token}` } });
     setPosts(res.data);
   };
 
@@ -16,7 +16,7 @@ export default function MyPosts() {
 
   const handleDelete = async (id) => {
     if(!confirm("Delete this record?")) return;
-    await axios.delete(`https://elegant-blog-api.onrender.com/api/posts/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+    await axios.delete(`https://monochrome-agc7.onrender.com/api/posts/${id}`, { headers: { Authorization: `Bearer ${token}` } });
     fetchPosts();
   };
 
