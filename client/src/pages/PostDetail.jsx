@@ -14,37 +14,32 @@ export default function PostDetail() {
     const fetchPost = async () => {
       try {
         const headers = token ? { Authorization: `Bearer ${token}` } : {};
-        const res = await axios.get(`https://monochrome-agc7.onrender.com/api/posts/${id}`, { headers });
+        const res = await axios.get(`https://elegant-blog-api.onrender.com/api/posts/${id}`, { headers });
         setPost(res.data);
       } catch (err) { navigate('/'); }
     };
     fetchPost();
   }, [id, token, navigate]);
 
-  if (!post) return <div className="font-mono text-zinc-400 mt-10">Loading...</div>;
+  if (!post) return <div className="font-mono" style={{ color: '#a1a1aa' }}>Loading...</div>;
 
   return (
-    <div className="animate-in fade-in duration-500 max-w-2xl mx-auto">
+    <div className="fade-in">
+      <div className="detail-meta">
+        {new Date(post.createdAt).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+      </div>
       
-      {/* Editorial Header */}
-      <div className="text-center mb-10">
-        <div className="font-mono text-xs text-zinc-400 uppercase tracking-widest mb-4">
-           {new Date(post.createdAt).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-        </div>
-        <h1 className="font-serif text-5xl md:text-6xl mb-6 leading-tight text-zinc-900">{post.title}</h1>
-        <div className="flex justify-center items-center gap-4 font-mono text-xs border-y border-zinc-100 py-4">
-            <span className="font-bold text-zinc-900">BY {post.author?.username.toUpperCase()}</span>
-            {post.isPrivate && <span className="text-zinc-400">| RESTRICTED ACCESS</span>}
-        </div>
+      <h1 className="detail-title">{post.title}</h1>
+      
+      <div className="detail-byline">
+          <span className="uppercase">BY {post.author?.username}</span>
+          {post.isPrivate && <span style={{ color: '#a1a1aa' }}>| RESTRICTED ACCESS</span>}
       </div>
 
-      {/* Content with Drop Cap style logic roughly applied via leading/spacing */}
-      <div className="font-serif text-lg leading-loose text-zinc-800 whitespace-pre-wrap text-justify">
-        {post.content}
-      </div>
+      <div className="detail-content">{post.content}</div>
 
-      <div className="mt-12 mb-20">
-        <h3 className="font-mono text-xs text-zinc-400 mb-2 uppercase">Reader Reactions</h3>
+      <div style={{ marginTop: '3rem', marginBottom: '5rem' }}>
+        <h3 className="font-mono uppercase" style={{ fontSize: '0.75rem', color: '#a1a1aa', marginBottom: '0.5rem' }}>Reader Reactions</h3>
         <ReactionBar post={post} onUpdate={setPost} />
       </div>
     </div>

@@ -7,17 +7,19 @@ import Register from './pages/Register';
 import CreatePost from './pages/CreatePost';
 import MyPosts from './pages/MyPosts';
 import PostDetail from './pages/PostDetail';
+
 const PrivateRoute = ({ children }) => {
   const { token } = useAuth();
   return token ? children : <Navigate to="/login" />;
 };
+
 function App() {
   return (
     <AuthProvider>
       <Router>
-        <div className="min-h-screen font-sans selection:bg-black selection:text-white">
+        <div className="app-wrapper">
           <Navbar />
-          <main className="max-w-3xl mx-auto px-6 py-12">
+          <main className="container">
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/login" element={<Login />} />

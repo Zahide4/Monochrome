@@ -6,8 +6,6 @@ const EMOJIS = ['👍', '❤️', '🔥', '👏', '😲'];
 export default function ReactionBar({ post, onUpdate }) {
   const { user, token } = useAuth();
   
-  // Group reactions by emoji
-  // { '👍': [userId1, userId2], '❤️': [] }
   const reactionCounts = post.reactions?.reduce((acc, curr) => {
     if (!acc[curr.emoji]) acc[curr.emoji] = [];
     acc[curr.emoji].push(curr.user);
@@ -17,18 +15,16 @@ export default function ReactionBar({ post, onUpdate }) {
   const handleReact = async (emoji) => {
     if (!user) return alert("Please login to react");
     try {
-      const res = await axios.put(`https://monochrome-agc7.onrender.com/api/posts/${post._id}/react`, 
+      const res = await axios.put(`https://elegant-blog-api.onrender.com/api/posts/${post._id}/react`, 
         { emoji }, 
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (onUpdate) onUpdate(res.data);
-    } catch (err) {
-      console.error(err);
-    }
+    } catch (err) { console.error(err); }
   };
 
   return (
-    <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-zinc-100">
+    <div className="reaction-wrapper">
       {EMOJIS.map(emoji => {
         const usersWhoReacted = reactionCounts[emoji] || [];
         const count = usersWhoReacted.length;
@@ -37,11 +33,8 @@ export default function ReactionBar({ post, onUpdate }) {
         return (
           <button 
             key={emoji}
-            onClick={(e) => { e.preventDefault(); handleReact(emoji); }} // Prevent link navigation
-            className={`
-              flex items-center gap-1 px-2 py-1 rounded-md text-xs font-mono transition-all
-              ${hasReacted ? 'bg-zinc-900 text-white' : 'bg-zinc-50 text-zinc-500 hover:bg-zinc-200'}
-            `}
+            onClick={(e) => { e.preventDefault(); handleReact(emoji); }}
+            className={`reaction-btn ${hasReacted ? 'active' : ''}`}
           >
             <span>{emoji}</span>
             {count > 0 && <span>{count}</span>}
