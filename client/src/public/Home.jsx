@@ -47,7 +47,7 @@ export default function Home() {
           </div>
         </div>
         <div className='header-img'>
-          <img src="../public/logo-main2.webp" alt="Monochrome Logo" className="header-logo" />
+          <img src="/logo-main2.webp" alt="Monochrome Logo" className="header-logo" />
         </div>
 
       </header>

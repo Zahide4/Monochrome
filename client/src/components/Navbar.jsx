@@ -8,7 +8,7 @@ export default function Navbar() {
       <div className="nav-inner">
 
         <Link to="/" className="nav-logo"><div className='nav-img'>
-          <img src="../public/logo-dark.webp" alt="Monochrome Logo" className="nav-logo" />
+          <img src="/logo-dark.webp" alt="Monochrome Logo" className="nav-logo" />
         </div><span>Monochrome.</span></Link>
         <div className="nav-links">
           <Link to="/">READ</Link>
