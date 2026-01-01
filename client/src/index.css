@@ -858,4 +858,9 @@ textarea {
   .header-img {
     width: 40px;
   }
+
+  .detail-title {
+    font-size: 2.5rem;
+    line-height: 1.2;
+  }
 }
