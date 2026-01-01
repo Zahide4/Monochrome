@@ -38,8 +38,8 @@ export default function PostDetail() {
 
       <div className="detail-content">{post.content}</div>
 
-      <div style={{ marginTop: '3rem', marginBottom: '5rem' }}>
-        <h3 className="font-mono uppercase" style={{ fontSize: '0.75rem', color: '#a1a1aa', marginBottom: '0.5rem' }}>Reader Reactions</h3>
+      <div style={{ marginTop: '3rem', marginBottom: '0rem' }}>
+        <h3 className="font-mono uppercase" style={{ fontWeight: 400, fontSize: '0.75rem', color: '#a1a1aa', marginBottom: '0rem' }}>Reader Reactions</h3>
         <ReactionBar post={post} onUpdate={setPost} />
       </div>
     </div>

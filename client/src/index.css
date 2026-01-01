@@ -358,6 +358,8 @@ textarea {
   line-height: 1.1;
   margin-bottom: 1.5rem;
   text-align: center;
+  font-weight: 400;
+  letter-spacing: -2px;
 }
 
 .detail-byline {
@@ -374,8 +376,8 @@ textarea {
 }
 
 .detail-content {
-  font-family: var(--font-serif);
-  font-size: 1.15rem;
+  font-family: var(--font-mono);
+  font-size: 1.1rem;
   line-height: 1.8;
   color: #27272a;
   white-space: pre-wrap;
