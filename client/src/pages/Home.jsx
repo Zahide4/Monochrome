@@ -44,7 +44,7 @@ export default function Home() {
 
 
         <div className="editorial-items">
-          <h1 className="header-title">Where your <span>words</span> <br />take center stage.</h1>
+          <h1 className="header-title">Where your <span>words</span> take center stage.</h1>
 
           <div className="nav-links">
             <div className="header-buttons">
