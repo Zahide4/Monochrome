@@ -9,7 +9,7 @@ export default function Navbar() {
 
         <Link to="/" className="nav-logo"><div className='nav-img'>
           <img src="../logo-dark.webp" alt="Monochrome Logo" className="nav-logo" />
-        </div>Monochrome.</Link>
+        </div><span>Monochrome.</span></Link>
         <div className="nav-links">
           <Link to="/">READ</Link>
           {user ? (

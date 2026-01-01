@@ -188,7 +188,7 @@ textarea {
   display: flex;
   justify-content: space-between;
   gap: 3rem;
-  flex-wrap: wrap;
+  flex-wrap: wrap-reverse;
   align-items: center;
 }
 
@@ -588,4 +588,38 @@ textarea {
 
 .action-delete:hover {
   color: #dc2626;
+}
+
+@media (max-width: 650px) {
+  .nav-logo span {
+    display: none;
+  }
+
+  .list-actions {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 450px) {
+  .nav-links {
+    font-size: 0.9rem;
+    gap: 1rem;
+  }
+  .nav-inner{
+    padding-inline: 0.25rem;
+  }
+  .header-title {
+    font-size: 3rem;
+    line-height: 3rem;
+    letter-spacing: -2px;
+    margin-bottom: 1.5rem;
+
+  }
+  .header-meta {
+    font-size: 0.8rem;
+  }
+
+  .header-img {
+    width: 40px;
+  }
 }
