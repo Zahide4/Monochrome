@@ -52,6 +52,8 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+  -webkit-tap-highlight-color: transparent;
+
 }
 
 body {
@@ -605,9 +607,11 @@ textarea {
     font-size: 0.9rem;
     gap: 1rem;
   }
-  .nav-inner{
+
+  .nav-inner {
     padding-inline: 0.25rem;
   }
+
   .header-title {
     font-size: 3rem;
     line-height: 3rem;
@@ -615,6 +619,7 @@ textarea {
     margin-bottom: 1.5rem;
 
   }
+
   .header-meta {
     font-size: 0.8rem;
   }
