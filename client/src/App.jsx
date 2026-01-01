@@ -37,10 +37,27 @@ function App() {
   }, []);
 
 
-return(
+  return (
     <AuthProvider>
       <Router>
+        <div className="spinner-container">
+          <div class="spinner center">
+            <div class="spinner-blade"></div>
+            <div class="spinner-blade"></div>
+            <div class="spinner-blade"></div>
+            <div class="spinner-blade"></div>
+            <div class="spinner-blade"></div>
+            <div class="spinner-blade"></div>
+            <div class="spinner-blade"></div>
+            <div class="spinner-blade"></div>
+            <div class="spinner-blade"></div>
+            <div class="spinner-blade"></div>
+            <div class="spinner-blade"></div>
+            <div class="spinner-blade"></div>
+          </div>
+        </div>
         <div className="app-wrapper">
+
           <Navbar />
           <main className="container">
             <Routes>
@@ -56,6 +73,6 @@ return(
         </div>
       </Router>
     </AuthProvider>
-)
+  )
 }
 export default App;
