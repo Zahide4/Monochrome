@@ -47,7 +47,12 @@ export default function Home() {
           </div>
         </div>
         <div className='header-img'>
-          <img src="/src/public/logo.webp" alt="Monochrome Logo" className="header-logo" />
+          <img
+            src="https://ik.imagekit.io/monochromecremier/public/logo.webp"
+            alt="Monochrome Logo"
+            className="header-logo"
+          />
+
         </div>
 
       </header>

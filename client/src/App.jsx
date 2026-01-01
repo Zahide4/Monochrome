@@ -11,6 +11,7 @@ import { useEffect } from "react";
 import Lenis from "@studio-freight/lenis";
 
 
+
 const PrivateRoute = ({ children }) => {
   const { token } = useAuth();
   return token ? children : <Navigate to="/login" />;
@@ -34,7 +35,9 @@ function App() {
       lenis.destroy();
     };
   }, []);
-  return (
+
+
+return(
     <AuthProvider>
       <Router>
         <div className="app-wrapper">
@@ -53,6 +56,6 @@ function App() {
         </div>
       </Router>
     </AuthProvider>
-  );
+)
 }
 export default App;

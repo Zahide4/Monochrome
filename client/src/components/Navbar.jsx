@@ -8,7 +8,11 @@ export default function Navbar() {
       <div className="nav-inner">
 
         <Link to="/" className="nav-logo"><div className='nav-img'>
-          <img src="/src/public/logoDark.webp" alt="Monochrome Logo" className="nav-logo" />
+          <img
+            src="https://ik.imagekit.io/monochromecremier/public/logoDark.webp"
+            alt="Monochrome Logo"
+            className="nav-logo"
+          />
         </div><span>Monochrome.</span></Link>
         <div className="nav-links">
           <Link to="/">READ</Link>

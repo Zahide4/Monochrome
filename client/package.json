@@ -9,6 +9,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@cloudinary/react": "^1.14.3",
+    "@cloudinary/url-gen": "^1.22.0",
     "@react-oauth/google": "^0.11.1",
     "@studio-freight/lenis": "^1.0.42",
     "axios": "^1.6.0",
