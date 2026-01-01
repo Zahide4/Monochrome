@@ -397,7 +397,7 @@ textarea {
   align-items: center;
   gap: 4px;
   padding: 4px 8px;
-  border-radius: 4px;
+  border-radius: 7px;
   font-family: var(--font-mono);
   font-size: 0.75rem;
   background: rgb(245, 245, 245);
@@ -413,6 +413,38 @@ textarea {
   background: var(--zinc-900);
   color: white;
 }
+
+
+/* REACTION SVG UPDATES */
+.reaction-btn { 
+  display: flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 4px;
+  font-family: var(--font-mono); font-size: 0.75rem; background: var(--zinc-50); color: var(--zinc-500);
+  border: 1px solid transparent;
+  transition: all 0.2s;
+}
+
+.reaction-btn:hover { 
+  background: var(--zinc-200); 
+}
+
+.reaction-btn .reaction-icon {
+  display: flex; 
+  align-items: center;
+}
+
+/* Active State (When user has clicked) */
+.reaction-btn.active { 
+  background: var(--zinc-600); 
+  color: white; 
+  border-color: var(--zinc-600);
+}
+
+/* Fill the SVG when active */
+.reaction-btn.active svg {
+  fill: white; /* Fills the icon with white */
+  stroke: var(--zinc-600);
+}
+
 
 /* CREATE / EDIT POST */
 .editor-input-title {
