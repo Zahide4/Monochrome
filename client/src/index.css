@@ -26,6 +26,27 @@
   /* ~768px */
 }
 
+::-webkit-scrollbar {
+  width: 5px;
+  display: none;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+  background: #888;
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+
 /* RESET & BASE STYLES */
 * {
   box-sizing: border-box;
@@ -125,6 +146,25 @@ textarea {
   font-size: 2rem;
   font-weight: 400;
   letter-spacing: -1px;
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  line-height: 0.8;
+  user-select: none;
+  cursor: default;
+  /* pointer-events: none; */
+
+}
+
+.nav-img {
+  width: 60px;
+  padding: 0.5rem;
+  border: 1.5px solid black;
+  border-radius: 5px;
+}
+
+.nav-img img {
+  width: 100%;
 }
 
 .nav-links {
@@ -142,7 +182,7 @@ textarea {
 
 /* HOME (MASONRY & HEADER) */
 .editorial-header {
-  border-bottom: 2px solid var(--zinc-900);
+  border-bottom: 2px solid var(--zinc-400);
   padding-bottom: 1.5rem;
   margin-bottom: 3rem;
   display: flex;
@@ -152,13 +192,17 @@ textarea {
   align-items: center;
 }
 
-.editorial-header svg {
+.editorial-header .header-img {
   width: 100%;
-  max-width: 150px;
-  height: 160px;
-  /* padding: rem; */
-  /* border: 1.5px solid var(--zinc-600); */
-  border-radius: 10px;
+  max-width: 220px;
+  pointer-events: none;
+  user-select: none;
+}
+
+.header-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .header-title {
@@ -169,6 +213,7 @@ textarea {
   letter-spacing: -3px;
   font-weight: 400;
 }
+
 .header-title span {
   font-style: italic;
 }
@@ -210,6 +255,7 @@ textarea {
   transform: translateY(-6px);
   box-shadow: 0 4px 4px rgba(0, 0, 0, 0.048);
 }
+
 .card-meta {
   display: flex;
   justify-content: space-between;
@@ -419,32 +465,40 @@ textarea {
 
 
 /* REACTION SVG UPDATES */
-.reaction-btn { 
-  display: flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 4px;
-  font-family: var(--font-mono); font-size: 0.75rem; background: var(--zinc-50); color: var(--zinc-500);
+.reaction-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  background: var(--zinc-50);
+  color: var(--zinc-500);
   border: 1px solid transparent;
   transition: all 0.2s;
 }
 
-.reaction-btn:hover { 
-  background: var(--zinc-200); 
+.reaction-btn:hover {
+  background: var(--zinc-200);
 }
 
 .reaction-btn .reaction-icon {
-  display: flex; 
+  display: flex;
   align-items: center;
 }
 
 /* Active State (When user has clicked) */
-.reaction-btn.active { 
-  background: var(--zinc-600); 
-  color: white; 
+.reaction-btn.active {
+  background: var(--zinc-600);
+  color: white;
   border-color: var(--zinc-600);
 }
 
 /* Fill the SVG when active */
 .reaction-btn.active svg {
-  fill: white; /* Fills the icon with white */
+  fill: white;
+  /* Fills the icon with white */
   stroke: var(--zinc-600);
 }
 
@@ -467,7 +521,8 @@ textarea {
   padding: 1.5rem;
   background: var(--zinc-50);
   border: 1px solid var(--zinc-200);
-  font-family: var(--font-serif);
+  font-family: var(--font-mono);
+  font-weight: 400;
   font-size: 1.1rem;
   line-height: 1.6;
   margin-bottom: 2rem;

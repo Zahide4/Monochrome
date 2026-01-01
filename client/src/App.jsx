@@ -7,6 +7,9 @@ import Register from './pages/Register';
 import CreatePost from './pages/CreatePost';
 import MyPosts from './pages/MyPosts';
 import PostDetail from './pages/PostDetail';
+import { useEffect } from "react";
+import Lenis from "@studio-freight/lenis";
+
 
 const PrivateRoute = ({ children }) => {
   const { token } = useAuth();
@@ -14,6 +17,23 @@ const PrivateRoute = ({ children }) => {
 };
 
 function App() {
+  useEffect(() => {
+    const lenis = new Lenis({
+      smooth: true,
+      lerp: 0.1, // lower = smoother
+    });
+
+    function raf(time) {
+      lenis.raf(time);
+      requestAnimationFrame(raf);
+    }
+
+    requestAnimationFrame(raf);
+
+    return () => {
+      lenis.destroy();
+    };
+  }, []);
   return (
     <AuthProvider>
       <Router>
