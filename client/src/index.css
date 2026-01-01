@@ -28,7 +28,10 @@
 
 ::-webkit-scrollbar {
   width: 5px;
-  display: none;
+  /* display: none; */
+
+
+
 }
 
 /* Track */
@@ -53,22 +56,33 @@
   margin: 0;
   padding: 0;
   -webkit-tap-highlight-color: transparent;
+  /* scroll-behavior: smooth; */
+}
 
+body {
+  
+  animation-name: fade-in;
+  animation-fill-mode: forwards;
+  animation-duration: 0.5s;
+  animation-delay: 1.8s;
+  overflow: hidden;
 }
 
 .spinner-container {
-  width: 100vw;
+  width: 100%;
   min-height: 100vh;
   opacity: 1;
   background: var(--bg-color);
   display: grid;
-  position: absolute;
+  /* position: absolute; */
+  position: fixed;
   inset: 0;
   place-items: center;
   animation-name: fade-out;
   animation-duration: 0.5s;
   animation-delay: 2s;
   animation-fill-mode: forwards;
+
 }
 
 @keyframes fade-out {
@@ -87,6 +101,16 @@
     opacity: 0;
     visibility: hidden;
     display: none;
+  }
+}
+
+@keyframes fade-in {
+  0% {
+    overflow: hidden;
+  }
+
+  100% {
+    overflow: unset;
   }
 }
 
@@ -477,8 +501,8 @@ textarea {
 
 .post-card:hover {
   transform: translateY(-6px);
-  border: 1.5px solid var(--zinc-500);
-  box-shadow: 0 8px 8px rgba(0, 0, 0, 0.144);
+  border: 1.5px solid var(--zinc-200);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.082);
 }
 
 .card-meta {
@@ -759,7 +783,10 @@ textarea {
   font-size: 1.1rem;
   line-height: 1.6;
   margin-bottom: 2rem;
+  overscroll-behavior: none;
   resize: vertical;
+  overflow-y: auto;
+  height: 500px;
 }
 
 .checkbox-group {

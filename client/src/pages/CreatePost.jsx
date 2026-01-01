@@ -29,28 +29,31 @@ export default function CreatePost() {
       <h1 className="header-title" style={{ fontSize: '2.5rem', marginBottom: '2rem' }}>
         {id ? 'Edit Entry' : 'New Entry'}
       </h1>
-      
+
       <form onSubmit={handleSubmit}>
         <div>
           <label className="font-mono" style={{ fontSize: '0.75rem', color: '#a1a1aa' }}>TITLE</label>
-          <input 
+          <input
             type="text" className="editor-input-title"
-            value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} required 
+            value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} required
           />
         </div>
         <div>
           <label className="font-mono" style={{ fontSize: '0.75rem', color: '#a1a1aa' }}>CONTENT</label>
-          <textarea 
+          <textarea
             className="editor-textarea"
-            value={formData.content} onChange={e => setFormData({...formData, content: e.target.value})} required 
+
+            value={formData.content} onWheel={(e) => {
+              e.stopPropagation();
+            }} onChange={e => setFormData({ ...formData, content: e.target.value })} required
           />
         </div>
         <div className="checkbox-group">
-            <input 
-              type="checkbox" id="isPrivate" 
-              checked={formData.isPrivate} onChange={e => setFormData({...formData, isPrivate: e.target.checked})} 
-            />
-            <label htmlFor="isPrivate" className="checkbox-label">Make this entry private</label>
+          <input
+            type="checkbox" id="isPrivate"
+            checked={formData.isPrivate} onChange={e => setFormData({ ...formData, isPrivate: e.target.checked })}
+          />
+          <label htmlFor="isPrivate" className="checkbox-label">Make this entry private</label>
         </div>
         <button className="btn-primary" style={{ boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
           {id ? 'Update' : 'Publish'}
