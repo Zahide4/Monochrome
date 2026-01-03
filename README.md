@@ -1,4 +1,5 @@
 # Monochrome
+<img width="815" height="342" alt="image" src="https://github.com/user-attachments/assets/9ebc134e-6dcd-4582-9b5d-199adc3a739d" />
 
 A MERN stack blogging platform focusing on high information density, security and design.
 
