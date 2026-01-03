@@ -39,18 +39,15 @@
   background: #f1f1f1;
 }
 
-/* Handle */
 ::-webkit-scrollbar-thumb {
   background: #888;
 }
 
-/* Handle on hover */
 ::-webkit-scrollbar-thumb:hover {
   background: #555;
 }
 
 
-/* RESET & BASE STYLES */
 * {
   box-sizing: border-box;
   margin: 0;
@@ -317,9 +314,7 @@ textarea {
   animation: fadeIn 0.5s ease-out forwards;
 }
 
-/* ---------------- COMPONENT STYLES ---------------- */
 
-/* NAVBAR */
 .navbar {
   position: sticky;
   top: 0;
@@ -575,7 +570,6 @@ textarea {
   color: var(--zinc-600);
 }
 
-/* AUTH FORMS (Login/Register) */
 .auth-wrapper {
   max-width: 400px;
   margin: 5rem auto 0;
@@ -648,7 +642,6 @@ textarea {
   text-transform: uppercase;
 }
 
-/* POST DETAIL */
 .detail-meta {
   text-align: center;
   font-family: var(--font-mono);
@@ -722,8 +715,6 @@ textarea {
   color: white;
 }
 
-
-/* REACTION SVG UPDATES */
 .reaction-btn {
   display: flex;
   align-items: center;
@@ -752,7 +743,6 @@ textarea {
   align-items: center;
 }
 
-/* Active State (When user has clicked) */
 .reaction-btn.active {
   background: var(--zinc-600);
   color: white;
@@ -767,7 +757,6 @@ textarea {
 }
 
 
-/* CREATE / EDIT POST */
 .editor-input-title {
   width: 100%;
   border: none;
