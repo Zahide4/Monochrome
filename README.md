@@ -2,7 +2,7 @@
 
 Monochrome is a content-focused blogging platform built on the MERN stack. It prioritizes legibility and structure, using a high-contrast design system to present dense information clearly.
 
-**Live Deployment:** [INSERT VERCEL LINK HERE]
+**Live Deployment:** [[MONOCHROME](https://monochrome-beryl.vercel.app/)]
 
 ## Design Philosophy
 The UI moves away from standard "card" layouts, opting instead for a **typography-driven interface**. 
