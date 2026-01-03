@@ -1,50 +1,41 @@
 # Monochrome
 
-Monochrome is a content-focused blogging platform built on the MERN stack. It prioritizes legibility and structure, using a high-contrast design system to present dense information clearly.
+A MERN stack blogging platform focusing on high information density and strict typography.
 
-**Live Deployment:** [[MONOCHROME](https://monochrome-beryl.vercel.app/)]
+**Deployment:** https://monochrome-beryl.vercel.app
 
-## Design Philosophy
-The UI moves away from standard "card" layouts, opting instead for a **typography-driven interface**. 
+## The Design
+The UI completely avoids standard "card" frameworks. Instead, it relies on a custom design system built with Vanilla CSS variables:
 
-*   **Visual Hierarchy:** Uses a Serif typeface (*Playfair Display*) for headers to establish editorial weight, contrasted with Monospace fonts (*JetBrains Mono*) for metadata (dates, authors, tags) to create a clear separation between content and utility.
-*   **High Contrast:** A strict black-and-white palette ensures maximum readability and gives the application a premium, timeless feel.
-*   **Masonry Layout:** Posts are arranged in a multi-column masonry grid using pure CSS, allowing for a dense information display that adapts naturally to different screen sizes without wasted whitespace.
+*   **Typography Mix:** I used *Playfair Display* (Serif) for headings to give it an editorial weight, contrasted with *JetBrains Mono* for metadata (dates, authors, tags). This creates a clear visual separation between "content" and "utility" data.
+*   **Masonry Layout:** Instead of a generic vertical list, posts flow into a responsive multi-column grid. This mimics a print layout and keeps the viewport content-dense on larger screens.
+*   **High Contrast:** Pure black and white (`#09090b` vs `#ffffff`). No greyscale backgrounds, just borders and whitespace for separation.
 
 ## Features
+*   **Auth:** JWT-based authentication supporting both standard Email/Password and Google OAuth.
+*   **Privacy Logic:**
+    *   **Public:** Visible to the world.
+    *   **Private:** Visible *only* to the author. The backend filters these out at the query level for feed requests, and blocks direct ID access for unauthorized users.
+*   **Reactions:** Authenticated users can react to posts. State is handled optimistically for immediate UI feedback.
 
-**Authentication & Security**
-*   Stateless authentication using JWT (JSON Web Tokens).
-*   Google OAuth integration via Google Identity Services.
-*   Password hashing with bcrypt.
+## Technical Patterns & Justification
 
-**Content Management**
-*   **Granular Privacy:** Posts can be public (visible to all) or private (encrypted visibility). Private posts are strictly accessible only to the author—even direct API requests from other users are rejected.
-*   **Interaction:** Real-time reaction system (Likes/Love) using optimistic UI updates.
-*   **Commenting:** Threaded comments stored directly within post documents for fast retrieval.
+**1. Authentication (Stateless JWT)**
+I chose JWTs over server-side sessions. Since the frontend (Vercel) and backend (Render) live on different domains, managing cookies is fragile. Sending the token in the `Authorization` header is cleaner and makes the backend stateless/easier to scale.
 
-## Technical Architecture & Pattern Justification
+**2. Data Modeling (Embedded Schemas)**
+Reactions are stored directly inside the `Post` document as an array of objects, rather than in a separate SQL-style table.
+*   *Why:* We almost never need to query reactions in isolation (e.g., "show me all reactions by User X"). We only need them when loading a post. Embedding them saves a database lookup and speeds up the feed.
 
-The project follows a decoupled **Client-Server architecture**, hosted separately (Vercel for Frontend, Render for Backend).
+**3. CSS Variables over Tailwind**
+I removed Tailwind CSS in the final build.
+*   *Why:* For a design this specific (custom fonts, specific masonry behavior), writing standard CSS with variables (`--font-serif`, `--container-width`) resulted in cleaner markup and a smaller final bundle size than utility class soup.
 
-### 1. Data Modeling (Embedded Documents)
-Instead of normalizing data (creating separate SQL-style tables for Comments or Reactions), I utilized MongoDB's document-oriented nature. 
-*   **Pattern:** Embedding.
-*   **Justification:** For a blog, read performance is critical. Storing comments and reactions inside the `Post` document allows the frontend to fetch a post and all its context in a single database query, significantly reducing latency compared to joining multiple collections.
+## Local Setup
 
-### 2. Controller-Service Separation
-The backend logic is separated from the routing definitions.
-*   **Justification:** This keeps `index.js` clean and ensures that business logic (like checking if a user is allowed to see a private post) is reusable and easy to test.
-
-### 3. Stateless Auth (JWT)
-*   **Justification:** Since the frontend and backend live on different domains (Vercel vs Render), managing sessions with cookies is complex and prone to CORS issues. JWTs are sent in the Authorization header, making the backend completely stateless and easier to scale.
-
-### 4. Vanilla CSS
-*   **Justification:** Tailwind was removed in favor of semantic, vanilla CSS with CSS Variables. This reduces the build bundle size and provides finer control over the specific typographic details required for the monochrome theme.
-
-## Setup Instructions
-
-### Backend
-1. Navigate to `server`
-2. `npm install`
-3. Create `.env` file:
+**Backend**
+```bash
+cd server
+npm install
+# Create .env with: MONGO_URI, JWT_SECRET, GOOGLE_CLIENT_ID
+npm run dev
