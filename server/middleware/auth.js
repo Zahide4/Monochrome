@@ -4,42 +4,33 @@ const auth = (req, res, next) => {
   try {
     const authHeader = req.header('Authorization');
     
-    if (!authHeader) {
-        console.log("⚠️ Auth Failed: Missing Header");
-        return res.status(401).json({ message: 'No authentication token found.' });
-    }
+    if (!authHeader) return res.status(401).json({ message: 'No Auth Header' });
 
-    // 1. CLEAN THE TOKEN
-    // Removes 'Bearer ', trims whitespace, and removes double quotes if present
+    // Extract token
     let token = authHeader.replace('Bearer ', '').trim();
+
+    // Clean quotes if present
     if (token.startsWith('"') && token.endsWith('"')) {
-        token = token.slice(1, -1); // Remove quotes "..."
+        token = token.slice(1, -1);
     }
 
-    if (!token) {
-        console.log("⚠️ Auth Failed: Empty Token");
-        return res.status(401).json({ message: 'Token string is empty.' });
+    if (!token || token === 'undefined' || token === 'null') {
+        return res.status(401).json({ message: 'Token is empty/null/undefined' });
     }
 
-    // 2. CHECK SECRET
-    if (!process.env.JWT_SECRET) {
-        console.error("❌ CRITICAL: JWT_SECRET IS MISSING ON SERVER!");
-        return res.status(500).json({ message: 'Server Config Error' });
-    }
-
-    // 3. VERIFY
     const verified = jwt.verify(token, process.env.JWT_SECRET);
     req.user = verified;
     next();
     
   } catch (err) {
-    // LOG EXACT ERROR TO RENDER
-    console.error("❌ JWT Verify Error:", err.message);
+    console.error("JWT Error:", err.message);
+    // RETURN THE BAD TOKEN SO WE CAN SEE IT
+    const received = req.header('Authorization') ? req.header('Authorization').substring(0, 20) + "..." : "None";
     
-    // Send detailed error to frontend for you to see
     res.status(400).json({ 
         message: 'Invalid Token', 
-        details: err.message 
+        details: err.message,
+        receivedHeader: received 
     });
   }
 };
