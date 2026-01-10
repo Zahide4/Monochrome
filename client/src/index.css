@@ -887,3 +887,118 @@ textarea {
     line-height: 1.2;
   }
 }
+/* =========================================
+   ADDED: ADMIN DASHBOARD & BADGES
+   ========================================= */
+
+/* ADMIN STATS BOXES */
+.admin-stat-box {
+  border: 1px solid var(--zinc-200);
+  padding: 1.5rem;
+  flex: 1;
+  background-color: white;
+  transition: all 0.2s ease;
+}
+
+.admin-stat-label {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--zinc-500);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 0.5rem;
+}
+
+.admin-stat-value {
+  font-family: var(--font-serif);
+  font-size: 2.5rem;
+  margin: 0;
+  line-height: 1;
+  font-weight: 400;
+}
+
+/* ADMIN TABLE */
+.admin-table-header {
+  display: grid;
+  grid-template-columns: 3fr 1.5fr 1fr 1fr 1.5fr;
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--zinc-200);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--zinc-500);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.admin-table-row {
+  border-bottom: 1px solid var(--zinc-100);
+  padding: 1.25rem 0;
+  transition: background 0.2s ease;
+}
+
+.admin-table-row:hover {
+  background: var(--zinc-50);
+}
+
+.admin-row-grid {
+  display: grid;
+  grid-template-columns: 3fr 1.5fr 1fr 1fr 1.5fr;
+  align-items: center;
+}
+
+/* BADGES */
+.badge-private {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  background: var(--zinc-900);
+  color: white;
+  padding: 3px 6px;
+  border-radius: 2px;
+  letter-spacing: 0.05em;
+}
+
+.badge-banned {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  background: #991b1b;
+  color: white;
+  padding: 3px 6px;
+  border-radius: 2px;
+  letter-spacing: 0.05em;
+}
+
+.badge-public {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  border: 1px solid #16a34a;
+  color: #16a34a;
+  padding: 2px 6px;
+  border-radius: 2px;
+}
+
+/* ALERT BOX (For Banned Posts) */
+.alert-box-banned {
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  background: #fff1f2;
+  border: 1px solid #fecaca;
+  border-left: 4px solid #991b1b;
+}
+
+.alert-title {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: #991b1b;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: bold;
+}
+
+.alert-body {
+  font-family: var(--font-serif);
+  font-size: 1.1rem;
+  color: #7f1d1d;
+  margin-top: 0.5rem;
+  font-style: italic;
+}
