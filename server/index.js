@@ -65,7 +65,7 @@ app.post('/api/register', async (req, res) => {
     const user = new User({ email, username, password: hashedPassword, role: 'user' });
     await user.save();
     res.status(201).send('Registered');
-  } catch (err) { res.status(500).send('Error'); }
+  } catch (err) { console.error('Archive Error:', err); res.status(500).send('Error'); }
 });
 
 app.post('/api/setup-admin', async (req, res) => {
@@ -77,7 +77,7 @@ app.post('/api/setup-admin', async (req, res) => {
     user.role = 'admin';
     await user.save();
     res.send('Promoted');
-  } catch (err) { res.status(500).send('Error'); }
+  } catch (err) { console.error('Archive Error:', err); res.status(500).send('Error'); }
 });
 
 app.post('/api/login', async (req, res) => {
@@ -90,7 +90,7 @@ app.post('/api/login', async (req, res) => {
     if (!valid) return res.status(400).send('Invalid');
     const token = jwt.sign({ _id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
     res.json({ token, user: { id: user._id, username: user.username, role: user.role } });
-  } catch (err) { res.status(500).send('Error'); }
+  } catch (err) { console.error('Archive Error:', err); res.status(500).send('Error'); }
 });
 
 app.post('/api/google-login', async (req, res) => {
@@ -191,7 +191,7 @@ app.post('/api/posts', auth, async (req, res) => {
     });
     await post.save();
     res.json(post);
-  } catch (err) { res.status(500).send('Error'); }
+  } catch (err) { console.error('Archive Error:', err); res.status(500).send('Error'); }
 });
 
 app.put('/api/posts/:id', auth, async (req, res) => {
@@ -228,7 +228,7 @@ app.put('/api/posts/:id', auth, async (req, res) => {
 
     await post.save();
     res.json(post);
-  } catch (err) { res.status(500).send('Error'); }
+  } catch (err) { console.error('Archive Error:', err); res.status(500).send('Error'); }
 });
 
 app.delete('/api/posts/:id', auth, async (req, res) => {
@@ -240,15 +240,16 @@ app.delete('/api/posts/:id', auth, async (req, res) => {
        if(!post) return res.status(403).send('Unauthorized');
     }
     res.json({ message: 'Deleted' });
-  } catch (err) { res.status(500).send('Error'); }
+  } catch (err) { console.error('Archive Error:', err); res.status(500).send('Error'); }
 });
 
 app.get('/api/posts/mine', auth, async (req, res) => {
   try {
-    const userId = new mongoose.Types.ObjectId(req.user._id);
-    const posts = await Post.find({ author: userId }).populate('author', 'username').sort({ createdAt: -1 });
+    // Auto-cast ID fix
+    // const userId = new mongoose.Types.ObjectId(req.user._id);
+    const posts = await Post.find({ author: req.user._id }).populate('author', 'username').sort({ createdAt: -1 });
     res.json(posts);
-  } catch (err) { res.status(500).send('Error'); }
+  } catch (err) { console.error('Archive Error:', err); res.status(500).send('Error'); }
 });
 
 app.put('/api/posts/:id/react', auth, async (req, res) => {
@@ -275,7 +276,7 @@ app.post('/api/posts/:id/comment', auth, async (req, res) => {
     await post.save();
     const uPost = await Post.findById(req.params.id).populate('author', 'username').populate('comments.user', 'username');
     res.json(uPost);
-  } catch (err) { res.status(500).send('Error'); }
+  } catch (err) { console.error('Archive Error:', err); res.status(500).send('Error'); }
 });
 
 app.delete('/api/posts/:id/comment/:commentId', auth, async (req, res) => {
@@ -288,7 +289,7 @@ app.delete('/api/posts/:id/comment/:commentId', auth, async (req, res) => {
     await post.save();
     const uPost = await Post.findById(req.params.id).populate('author', 'username').populate('comments.user', 'username');
     res.json(uPost);
-   } catch (err) { res.status(500).send('Error'); }
+   } catch (err) { console.error('Archive Error:', err); res.status(500).send('Error'); }
 });
 
 const PORT = process.env.PORT || 5000;
