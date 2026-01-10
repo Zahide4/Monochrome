@@ -14,7 +14,7 @@ export default function CommentSection({ post, onUpdate }) {
     setLoading(true);
     try {
       const res = await axios.post(
-        `https://monochrome-agc7.onrender.com/api/posts/${post._id}/comment`,
+        `https://monochrome-w1vb.onrender.com/api/posts/${post._id}/comment`,
         { text },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -32,7 +32,7 @@ export default function CommentSection({ post, onUpdate }) {
     if (!confirm("Delete this comment?")) return;
     try {
       const res = await axios.delete(
-        `https://monochrome-agc7.onrender.com/api/posts/${post._id}/comment/${commentId}`,
+        `https://monochrome-w1vb.onrender.com/api/posts/${post._id}/comment/${commentId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if(onUpdate) onUpdate(res.data);

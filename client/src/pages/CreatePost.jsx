@@ -11,7 +11,7 @@ export default function CreatePost() {
 
   useEffect(() => {
     if (id) {
-      axios.get(`https://monochrome-agc7.onrender.com/api/posts/${id}`, { headers: { Authorization: `Bearer ${token}` } })
+      axios.get(`https://monochrome-w1vb.onrender.com/api/posts/${id}`, { headers: { Authorization: `Bearer ${token}` } })
         .then(res => setFormData({ title: res.data.title, content: res.data.content, isPrivate: res.data.isPrivate }));
     }
   }, [id, token]);
@@ -19,8 +19,8 @@ export default function CreatePost() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const config = { headers: { Authorization: `Bearer ${token}` } };
-    if (id) await axios.put(`https://monochrome-agc7.onrender.com/api/posts/${id}`, formData, config);
-    else await axios.post('https://monochrome-agc7.onrender.com/api/posts', formData, config);
+    if (id) await axios.put(`https://monochrome-w1vb.onrender.com/api/posts/${id}`, formData, config);
+    else await axios.post('https://monochrome-w1vb.onrender.com/api/posts', formData, config);
     navigate('/mine');
   };
 

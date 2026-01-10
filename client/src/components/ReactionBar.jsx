@@ -33,7 +33,7 @@ export default function ReactionBar({ post, onUpdate }) {
     if (!user) return alert("Please login to react");
     try {
       // We send the ID ('like' or 'heart') to the backend
-      const res = await axios.put(`https://monochrome-agc7.onrender.com/api/posts/${post._id}/react`, 
+      const res = await axios.put(`https://monochrome-w1vb.onrender.com/api/posts/${post._id}/react`, 
         { emoji: reactionId }, 
         { headers: { Authorization: `Bearer ${token}` } }
       );
