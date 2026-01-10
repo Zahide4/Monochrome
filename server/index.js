@@ -22,7 +22,7 @@ const app = express();
 app.set('trust proxy', 1);
 
 app.use(cors({
-  origin: ["https://monochrome-beryl.vercel.app", "http://localhost:5173"],
+  origin: ["https://monochromeblog.vercel.app", "http://localhost:5173"],
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true
 }));
