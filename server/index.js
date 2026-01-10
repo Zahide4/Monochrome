@@ -67,7 +67,7 @@ const auth = (req, res, next) => {
     }
 
     const verified = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = verified;
+    req.user = verified; // This contains { _id, role }
     next();
     
   } catch (err) {
@@ -148,6 +148,7 @@ app.get('/api/posts', async (req, res) => {
 
     if (token) {
       try {
+        // We try to decode cleanly. If it fails, we just show public posts.
         let cleanToken = token.trim();
         if (cleanToken.startsWith('"') && cleanToken.endsWith('"')) cleanToken = cleanToken.slice(1, -1);
         
@@ -165,6 +166,7 @@ app.get('/api/posts', async (req, res) => {
            };
         }
       } catch (e) {
+          // Token invalid? Just ignore and show public.
           console.log("Feed Auth Warning:", e.message);
       }
     }
@@ -176,11 +178,15 @@ app.get('/api/posts', async (req, res) => {
 // 2. My Logs (FIXED)
 app.get('/api/posts/mine', auth, async (req, res) => {
   try {
+    // Debugging: Ensure we have an ID
     if (!req.user || !req.user._id) {
         console.error("MyLogs Failed: No user ID in token", req.user);
         return res.status(400).json({ message: "User ID missing from token" });
     }
+    
+    // Explicit Cast to ObjectId to prevent 500 errors
     const userId = new mongoose.Types.ObjectId(req.user._id);
+    
     const posts = await Post.find({ author: userId }).populate('author', 'username').sort({ createdAt: -1 });
     res.json(posts);
   } catch (err) { 
@@ -226,19 +232,24 @@ app.get('/api/posts/:id', async (req, res) => {
   } catch (err) { res.status(500).json({ message: 'Error' }); }
 });
 
-// 4. Create Post
+// 4. Create Post (FIXED)
 app.post('/api/posts', auth, async (req, res) => {
   try {
+    console.log("Attempting to create post for:", req.user._id); // DEBUG LOG
+    
     if (!req.body.title || !req.body.content) {
         return res.status(400).json({ message: "Title and Content required" });
     }
+
     const post = new Post({ 
         title: req.body.title,
         content: req.body.content,
         isPrivate: req.body.isPrivate || false,
-        author: req.user._id 
+        author: req.user._id // Mongoose handles the cast
     });
+    
     await post.save();
+    console.log("Post created successfully:", post._id);
     res.json(post);
   } catch (err) { 
     console.error("Create Post Error:", err);
@@ -330,7 +341,7 @@ app.delete('/api/posts/:id/comment/:commentId', auth, async (req, res) => {
     await post.save();
     const uPost = await Post.findById(req.params.id).populate('author', 'username').populate('comments.user', 'username');
     res.json(uPost);
-   } catch (err) { res.status(500).send('Error'); }
+   }} catch (err) { res.status(500).send('Error'); }
 });
 
 const PORT = process.env.PORT || 5000;
