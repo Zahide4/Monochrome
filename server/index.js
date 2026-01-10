@@ -22,7 +22,7 @@ const app = express();
 app.set('trust proxy', 1);
 
 app.use(cors({
-  origin: ["https://monochrome-beryl.vercel.app", "http://localhost:5173"],
+  origin: ["https://monochrome-beryl.vercel.app", "http://localhost:5173"], // Ensure this matches your actual Vercel URL
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true
 }));
@@ -55,7 +55,6 @@ const isAdmin = (user) => user && user.role === 'admin';
 const auth = (req, res, next) => {
   try {
     const authHeader = req.header('Authorization');
-    
     if (!authHeader) return res.status(401).json({ message: 'Missing Authorization Header' });
 
     // Clean Token
@@ -70,7 +69,6 @@ const auth = (req, res, next) => {
     const verified = jwt.verify(token, process.env.JWT_SECRET);
     req.user = verified;
     next();
-    
   } catch (err) {
     console.error("❌ JWT Verify Failed:", err.message);
     res.status(400).json({ message: 'Invalid Token', details: err.message });
@@ -181,7 +179,7 @@ app.get('/api/posts/:id', async (req, res) => {
        try { 
          const decoded = jwt.verify(token, process.env.JWT_SECRET); 
          user = await User.findById(decoded._id);
-       } catch (e) {}
+      } catch (e) {}
     }
 
     if (user && isAdmin(user)) {
@@ -306,7 +304,7 @@ app.delete('/api/posts/:id/comment/:commentId', auth, async (req, res) => {
     await post.save();
     const uPost = await Post.findById(req.params.id).populate('author', 'username').populate('comments.user', 'username');
     res.json(uPost);
-   }} catch (err) { res.status(500).send('Error'); }
+   } catch (err) { res.status(500).send('Error'); }
 });
 
 const PORT = process.env.PORT || 5000;
