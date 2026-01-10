@@ -16,21 +16,17 @@ require('dotenv').config();
 
 const User = require('./models/User');
 const Post = require('./models/Post');
-const auth = require('./middleware/auth');
 
 const app = express();
 
-// TRUST PROXY (Required for Render)
 app.set('trust proxy', 1);
 
-// CORS (MUST BE FIRST)
 app.use(cors({
   origin: ["https://monochrome-beryl.vercel.app", "http://localhost:5173"],
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true
 }));
 
-// HELMET (Google Login Fix)
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" },
   crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" }
@@ -41,7 +37,6 @@ app.use(mongoSanitize());
 app.use(xss());
 app.use(hpp());
 
-// Rate Limiting
 const limiter = rateLimit({
   windowMs: 10 * 60 * 1000,
   max: 200,
@@ -56,9 +51,36 @@ mongoose.connect(process.env.MONGO_URI)
 
 const isAdmin = (user) => user && user.role === 'admin';
 
+// --- INLINE AUTH MIDDLEWARE (DEBUG VERSION) ---
+const auth = (req, res, next) => {
+  try {
+    const authHeader = req.header('Authorization');
+    
+    if (!authHeader) return res.status(401).json({ message: 'Missing Authorization Header' });
+
+    // Clean Token
+    let token = authHeader.replace(/^Bearer\s+/i, "").trim();
+    if (token.startsWith('"') && token.endsWith('"')) token = token.slice(1, -1);
+
+    if (!process.env.JWT_SECRET) {
+        console.error("❌ CRITICAL: JWT_SECRET is missing in environment!");
+        return res.status(500).json({ message: 'Server Config Error' });
+    }
+
+    const verified = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = verified;
+    next();
+    
+  } catch (err) {
+    console.error("❌ JWT Verify Failed:", err.message);
+    res.status(400).json({ message: 'Invalid Token', details: err.message });
+  }
+};
+
 app.get('/ping', (req, res) => res.send('pong'));
 
-// --- AUTH ---
+// --- AUTH ROUTERS ---
+
 app.post('/api/register', async (req, res) => {
   try {
     const { email, username, password } = req.body;
@@ -69,7 +91,7 @@ app.post('/api/register', async (req, res) => {
     const user = new User({ email, username, password: hashedPassword, role: 'user' });
     await user.save();
     res.status(201).send('Registered');
-  } catch (err) { console.error('API Error:', err); res.status(500).send('Server Error'); }
+  } catch (err) { res.status(500).send('Error'); }
 });
 
 app.post('/api/setup-admin', async (req, res) => {
@@ -81,7 +103,7 @@ app.post('/api/setup-admin', async (req, res) => {
     user.role = 'admin';
     await user.save();
     res.send('Promoted');
-  } catch (err) { console.error('API Error:', err); res.status(500).send('Server Error'); }
+  } catch (err) { res.status(500).send('Error'); }
 });
 
 app.post('/api/login', async (req, res) => {
@@ -89,12 +111,19 @@ app.post('/api/login', async (req, res) => {
     const { email, password } = req.body;
     const user = await User.findOne({ email });
     if (!user) return res.status(400).send('User not found');
-    if (!user.password) return res.status(400).send('Use Google');
-    const valid = await bcrypt.compare(password, user.password);
-    if (!valid) return res.status(400).send('Invalid');
+    
+    // Check Password
+    if (user.password) {
+        const valid = await bcrypt.compare(password, user.password);
+        if (!valid) return res.status(400).send('Invalid Credentials');
+    } else {
+        return res.status(400).send('Use Google Login');
+    }
+    
+    // SIGN TOKEN (Using the SAME secret as verify)
     const token = jwt.sign({ _id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
     res.json({ token, user: { id: user._id, username: user.username, role: user.role } });
-  } catch (err) { console.error('API Error:', err); res.status(500).send('Server Error'); }
+  } catch (err) { res.status(500).send('Error'); }
 });
 
 app.post('/api/google-login', async (req, res) => {
@@ -117,7 +146,6 @@ app.post('/api/google-login', async (req, res) => {
 app.get('/api/posts', async (req, res) => {
   try {
     const token = req.header('Authorization')?.replace('Bearer ', '');
-    // DEFAULT: Show Public posts that are NOT hidden
     let query = { isPrivate: false, hiddenByAdmin: { $ne: true } };
 
     if (token) {
@@ -140,18 +168,6 @@ app.get('/api/posts', async (req, res) => {
     const posts = await Post.find(query).populate('author', 'username').sort({ createdAt: -1 });
     res.json(posts);
   } catch (err) { res.status(500).send('Server Error'); }
-});
-
-// --- FIXED "MY ARCHIVES" ROUTE ---
-app.get('/api/posts/mine', auth, async (req, res) => {
-  try {
-    // Removed the manual ObjectId casting which was causing the 500 error
-    const posts = await Post.find({ author: req.user._id }).populate('author', 'username').sort({ createdAt: -1 });
-    res.json(posts);
-  } catch (err) { 
-    console.error("Archive Error:", err);
-    res.status(500).send('Error'); 
-  }
 });
 
 app.get('/api/posts/:id', async (req, res) => {
@@ -198,7 +214,7 @@ app.post('/api/posts', auth, async (req, res) => {
     });
     await post.save();
     res.json(post);
-  } catch (err) { console.error('API Error:', err); res.status(500).send('Server Error'); }
+  } catch (err) { res.status(500).send('Error'); }
 });
 
 app.put('/api/posts/:id', auth, async (req, res) => {
@@ -230,7 +246,7 @@ app.put('/api/posts/:id', auth, async (req, res) => {
 
     await post.save();
     res.json(post);
-  } catch (err) { console.error('API Error:', err); res.status(500).send('Server Error'); }
+  } catch (err) { res.status(500).send('Error'); }
 });
 
 app.delete('/api/posts/:id', auth, async (req, res) => {
@@ -242,7 +258,18 @@ app.delete('/api/posts/:id', auth, async (req, res) => {
        if(!post) return res.status(403).send('Unauthorized');
     }
     res.json({ message: 'Deleted' });
-  } catch (err) { console.error('API Error:', err); res.status(500).send('Server Error'); }
+  } catch (err) { res.status(500).send('Error'); }
+});
+
+// FIXED ARCHIVE ROUTE
+app.get('/api/posts/mine', auth, async (req, res) => {
+  try {
+    const posts = await Post.find({ author: req.user._id }).populate('author', 'username').sort({ createdAt: -1 });
+    res.json(posts);
+  } catch (err) { 
+    console.error("Archive Error:", err);
+    res.status(500).send('Error'); 
+  }
 });
 
 app.put('/api/posts/:id/react', auth, async (req, res) => {
@@ -269,7 +296,7 @@ app.post('/api/posts/:id/comment', auth, async (req, res) => {
     await post.save();
     const uPost = await Post.findById(req.params.id).populate('author', 'username').populate('comments.user', 'username');
     res.json(uPost);
-  } catch (err) { console.error('API Error:', err); res.status(500).send('Server Error'); }
+  } catch (err) { res.status(500).send('Error'); }
 });
 
 app.delete('/api/posts/:id/comment/:commentId', auth, async (req, res) => {
@@ -282,7 +309,7 @@ app.delete('/api/posts/:id/comment/:commentId', auth, async (req, res) => {
     await post.save();
     const uPost = await Post.findById(req.params.id).populate('author', 'username').populate('comments.user', 'username');
     res.json(uPost);
-   } catch (err) { console.error('API Error:', err); res.status(500).send('Server Error'); }
+   }} catch (err) { res.status(500).send('Error'); }
 });
 
 const PORT = process.env.PORT || 5000;
