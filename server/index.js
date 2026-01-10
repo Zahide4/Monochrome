@@ -20,14 +20,17 @@ const auth = require('./middleware/auth');
 
 const app = express();
 
+// TRUST PROXY (Required for Render)
 app.set('trust proxy', 1);
 
+// CORS (MUST BE FIRST)
 app.use(cors({
   origin: ["https://monochrome-beryl.vercel.app", "http://localhost:5173"],
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true
 }));
 
+// HELMET (Google Login Fix)
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" },
   crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" }
@@ -38,6 +41,7 @@ app.use(mongoSanitize());
 app.use(xss());
 app.use(hpp());
 
+// Rate Limiting
 const limiter = rateLimit({
   windowMs: 10 * 60 * 1000,
   max: 200,
@@ -65,7 +69,7 @@ app.post('/api/register', async (req, res) => {
     const user = new User({ email, username, password: hashedPassword, role: 'user' });
     await user.save();
     res.status(201).send('Registered');
-  } catch (err) { console.error('Archive Error:', err); res.status(500).send('Error'); }
+  } catch (err) { res.status(500).send('Error'); }
 });
 
 app.post('/api/setup-admin', async (req, res) => {
@@ -77,7 +81,7 @@ app.post('/api/setup-admin', async (req, res) => {
     user.role = 'admin';
     await user.save();
     res.send('Promoted');
-  } catch (err) { console.error('Archive Error:', err); res.status(500).send('Error'); }
+  } catch (err) { res.status(500).send('Error'); }
 });
 
 app.post('/api/login', async (req, res) => {
@@ -90,7 +94,7 @@ app.post('/api/login', async (req, res) => {
     if (!valid) return res.status(400).send('Invalid');
     const token = jwt.sign({ _id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
     res.json({ token, user: { id: user._id, username: user.username, role: user.role } });
-  } catch (err) { console.error('Archive Error:', err); res.status(500).send('Error'); }
+  } catch (err) { res.status(500).send('Error'); }
 });
 
 app.post('/api/google-login', async (req, res) => {
@@ -108,12 +112,12 @@ app.post('/api/google-login', async (req, res) => {
   } catch (error) { res.status(400).send('Auth Failed'); }
 });
 
-// --- POST LOGIC ---
+// --- POSTS ---
 
 app.get('/api/posts', async (req, res) => {
   try {
     const token = req.header('Authorization')?.replace('Bearer ', '');
-    // DEFAULT: Show Public posts that are NOT hidden. $ne: true handles old posts missing the field.
+    // DEFAULT: Show Public posts that are NOT hidden
     let query = { isPrivate: false, hiddenByAdmin: { $ne: true } };
 
     if (token) {
@@ -122,13 +126,8 @@ app.get('/api/posts', async (req, res) => {
         const user = await User.findById(decoded._id);
         
         if (isAdmin(user)) {
-           // ADMIN: See Public + Anything Hidden by Admin
            query = { $or: [ { isPrivate: false }, { hiddenByAdmin: true } ] };
         } else {
-           // USER: 
-           // 1. Public posts (not hidden)
-           // 2. My posts (EVEN IF HIDDEN by admin, so I can see the ban message)
-           // 3. My private posts
            query = {
              $or: [
                { isPrivate: false, hiddenByAdmin: { $ne: true } },
@@ -141,6 +140,18 @@ app.get('/api/posts', async (req, res) => {
     const posts = await Post.find(query).populate('author', 'username').sort({ createdAt: -1 });
     res.json(posts);
   } catch (err) { res.status(500).send('Server Error'); }
+});
+
+// --- FIXED "MY ARCHIVES" ROUTE ---
+app.get('/api/posts/mine', auth, async (req, res) => {
+  try {
+    // Removed the manual ObjectId casting which was causing the 500 error
+    const posts = await Post.find({ author: req.user._id }).populate('author', 'username').sort({ createdAt: -1 });
+    res.json(posts);
+  } catch (err) { 
+    console.error("Archive Error:", err);
+    res.status(500).send('Error'); 
+  }
 });
 
 app.get('/api/posts/:id', async (req, res) => {
@@ -159,21 +170,17 @@ app.get('/api/posts/:id', async (req, res) => {
        } catch (e) {}
     }
 
-    // ADMIN RIGHTS
     if (user && isAdmin(user)) {
-      // COMPLIANCE: If user made it private, and admin DID NOT hide it, Admin can't see.
       if (post.isPrivate && !post.hiddenByAdmin) {
          return res.status(403).json({ message: 'Compliance: Admin cannot view private user posts.' });
       }
-      return res.json(post); // Admin can see Public or HiddenByAdmin
+      return res.json(post);
     }
 
-    // AUTHOR RIGHTS (Can always see own post, even if banned)
     if (user && post.author._id.toString() === user._id.toString()) {
        return res.json(post);
     }
 
-    // PUBLIC RIGHTS
     if (post.hiddenByAdmin) return res.status(403).json({ message: 'Content Removed by Admin' });
     if (post.isPrivate) return res.status(403).json({ message: 'Private Post' });
 
@@ -191,7 +198,7 @@ app.post('/api/posts', auth, async (req, res) => {
     });
     await post.save();
     res.json(post);
-  } catch (err) { console.error('Archive Error:', err); res.status(500).send('Error'); }
+  } catch (err) { res.status(500).send('Error'); }
 });
 
 app.put('/api/posts/:id', auth, async (req, res) => {
@@ -207,28 +214,23 @@ app.put('/api/posts/:id', auth, async (req, res) => {
     if (req.body.title) post.title = req.body.title;
     if (req.body.content) post.content = req.body.content;
     
-    // ADMIN ACTIONS
     if (isAdmin(user)) {
-       // HIDING
        if (req.body.hiddenByAdmin === true) {
           post.hiddenByAdmin = true;
           if (req.body.takedownReason) post.takedownReason = req.body.takedownReason;
        } 
-       // UNHIDING / RESTORING
        else if (req.body.hiddenByAdmin === false) {
           post.hiddenByAdmin = false;
           post.takedownReason = null; 
-          // Restore visibility (set to Public)
           post.isPrivate = false; 
        }
     } else {
-       // USER ACTIONS
        if (req.body.isPrivate !== undefined) post.isPrivate = req.body.isPrivate;
     }
 
     await post.save();
     res.json(post);
-  } catch (err) { console.error('Archive Error:', err); res.status(500).send('Error'); }
+  } catch (err) { res.status(500).send('Error'); }
 });
 
 app.delete('/api/posts/:id', auth, async (req, res) => {
@@ -240,16 +242,7 @@ app.delete('/api/posts/:id', auth, async (req, res) => {
        if(!post) return res.status(403).send('Unauthorized');
     }
     res.json({ message: 'Deleted' });
-  } catch (err) { console.error('Archive Error:', err); res.status(500).send('Error'); }
-});
-
-app.get('/api/posts/mine', auth, async (req, res) => {
-  try {
-    // Auto-cast ID fix
-    // const userId = new mongoose.Types.ObjectId(req.user._id);
-    const posts = await Post.find({ author: req.user._id }).populate('author', 'username').sort({ createdAt: -1 });
-    res.json(posts);
-  } catch (err) { console.error('Archive Error:', err); res.status(500).send('Error'); }
+  } catch (err) { res.status(500).send('Error'); }
 });
 
 app.put('/api/posts/:id/react', auth, async (req, res) => {
@@ -276,7 +269,7 @@ app.post('/api/posts/:id/comment', auth, async (req, res) => {
     await post.save();
     const uPost = await Post.findById(req.params.id).populate('author', 'username').populate('comments.user', 'username');
     res.json(uPost);
-  } catch (err) { console.error('Archive Error:', err); res.status(500).send('Error'); }
+  } catch (err) { res.status(500).send('Error'); }
 });
 
 app.delete('/api/posts/:id/comment/:commentId', auth, async (req, res) => {
@@ -289,7 +282,7 @@ app.delete('/api/posts/:id/comment/:commentId', auth, async (req, res) => {
     await post.save();
     const uPost = await Post.findById(req.params.id).populate('author', 'username').populate('comments.user', 'username');
     res.json(uPost);
-   } catch (err) { console.error('Archive Error:', err); res.status(500).send('Error'); }
+   } catch (err) { res.status(500).send('Error'); }
 });
 
 const PORT = process.env.PORT || 5000;
