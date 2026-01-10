@@ -22,7 +22,7 @@ export default function MyPosts() {
 
   return (
     <div>
-      <h1 className="header-title" style={{ fontSize: '2.5rem', marginBottom: '2rem' }}>My Archives</h1>
+      <h1 className="header-title page-title" style={{marginBottom: '2rem' }}>My Archives</h1>
       <div>
         {posts.map(post => (
           <div key={post._id} className="list-item">

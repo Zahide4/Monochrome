@@ -42,19 +42,19 @@ function App() {
     <AuthProvider>
       <Router>
         <div className="spinner-container">
-          <div class="spinner center">
-            <div class="spinner-blade"></div>
-            <div class="spinner-blade"></div>
-            <div class="spinner-blade"></div>
-            <div class="spinner-blade"></div>
-            <div class="spinner-blade"></div>
-            <div class="spinner-blade"></div>
-            <div class="spinner-blade"></div>
-            <div class="spinner-blade"></div>
-            <div class="spinner-blade"></div>
-            <div class="spinner-blade"></div>
-            <div class="spinner-blade"></div>
-            <div class="spinner-blade"></div>
+          <div className="spinner center">
+            <div className="spinner-blade"></div>
+            <div className="spinner-blade"></div>
+            <div className="spinner-blade"></div>
+            <div className="spinner-blade"></div>
+            <div className="spinner-blade"></div>
+            <div className="spinner-blade"></div>
+            <div className="spinner-blade"></div>
+            <div className="spinner-blade"></div>
+            <div className="spinner-blade"></div>
+            <div className="spinner-blade"></div>
+            <div className="spinner-blade"></div>
+            <div className="spinner-blade"></div>
           </div>
         </div>
         <div className="app-wrapper">

@@ -33,8 +33,8 @@ export default function PostDetail() {
             background: '#fee2e2', border: '1px solid #ef4444', 
             color: '#7f1d1d' 
         }}>
-            <h3 className="font-mono" style={{ margin: 0, fontWeight: 'bold' }}>⚠️ CONTENT REMOVED BY ADMIN</h3>
-            <p className="font-serif" style={{ marginTop: '0.5rem' }}>
+            <h3 className="font-mono" style={{ margin: 0, fontWeight: 'bold' }}>CONTENT REMOVED BY ADMIN</h3>
+            <p className="font-mono" style={{ marginTop: '0.5rem' }}>
                Reason: {post.takedownReason || 'Violates community guidelines.'}
             </p>
         </div>

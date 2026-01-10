@@ -29,7 +29,7 @@ export default function Register() {
 
   return (
     <div className="auth-wrapper fade-in">
-      <h1 className="auth-title">Join the Club</h1>
+      <h1 className="auth-title">Join Monochrome</h1>
       
       <form onSubmit={handleSubmit} style={{ marginBottom: '2rem' }}>
          <input 

@@ -62,14 +62,14 @@ const auth = (req, res, next) => {
     if (token.startsWith('"') && token.endsWith('"')) token = token.slice(1, -1);
 
     if (!process.env.JWT_SECRET) {
-        console.error("❌ CRITICAL: JWT_SECRET is missing!");
-        return res.status(500).json({ message: 'Server Config Error' });
+      console.error("❌ CRITICAL: JWT_SECRET is missing!");
+      return res.status(500).json({ message: 'Server Config Error' });
     }
 
     const verified = jwt.verify(token, process.env.JWT_SECRET);
     req.user = verified;
     next();
-    
+
   } catch (err) {
     console.error("❌ JWT Error:", err.message);
     res.status(400).json({ message: 'Invalid Token', details: err.message });
@@ -84,7 +84,7 @@ app.post('/api/register', async (req, res) => {
   try {
     const { email, username, password } = req.body;
     const existingUser = await User.findOne({ email });
-    if(existingUser) return res.status(400).send('Email exists');
+    if (existingUser) return res.status(400).send('Email exists');
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
     const user = new User({ email, username, password: hashedPassword, role: 'user' });
@@ -110,14 +110,14 @@ app.post('/api/login', async (req, res) => {
     const { email, password } = req.body;
     const user = await User.findOne({ email });
     if (!user) return res.status(400).send('User not found');
-    
+
     if (user.password) {
-        const valid = await bcrypt.compare(password, user.password);
-        if (!valid) return res.status(400).send('Invalid Credentials');
+      const valid = await bcrypt.compare(password, user.password);
+      if (!valid) return res.status(400).send('Invalid Credentials');
     } else {
-        return res.status(400).send('Use Google Login');
+      return res.status(400).send('Use Google Login');
     }
-    
+
     const token = jwt.sign({ _id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
     res.json({ token, user: { id: user._id, username: user.username, role: user.role } });
   } catch (err) { res.status(500).send('Error'); }
@@ -149,18 +149,19 @@ app.get('/api/posts', async (req, res) => {
         if (cleanToken.startsWith('"') && cleanToken.endsWith('"')) cleanToken = cleanToken.slice(1, -1);
         const decoded = jwt.verify(cleanToken, process.env.JWT_SECRET);
         const user = await User.findById(decoded._id);
-        
+
+
         if (isAdmin(user)) {
-           query = { $or: [ { isPrivate: false }, { hiddenByAdmin: true } ] };
+          query = { $or: [{ $or: [{ isPrivate: false }, { hiddenByAdmin: true }] }, { role: 'admin' }] };
         } else {
-           query = {
-             $or: [
-               { isPrivate: false, hiddenByAdmin: { $ne: true } },
-               { author: decoded._id } 
-             ]
-           };
+          query = {
+            $or: [
+              { isPrivate: false, hiddenByAdmin: { $ne: true } },
+              { author: decoded._id }
+            ]
+          };
         }
-      } catch (e) {}
+      } catch (e) { }
     }
     const posts = await Post.find(query).populate('author', 'username').sort({ createdAt: -1 });
     res.json(posts);
@@ -183,12 +184,12 @@ app.get('/api/posts/:id', async (req, res) => {
     const token = req.header('Authorization')?.replace('Bearer ', '');
     let user = null;
     if (token) {
-       try { 
-         let cleanToken = token.trim();
-         if (cleanToken.startsWith('"') && cleanToken.endsWith('"')) cleanToken = cleanToken.slice(1, -1);
-         const decoded = jwt.verify(cleanToken, process.env.JWT_SECRET); 
-         user = await User.findById(decoded._id);
-       } catch (e) {}
+      try {
+        let cleanToken = token.trim();
+        if (cleanToken.startsWith('"') && cleanToken.endsWith('"')) cleanToken = cleanToken.slice(1, -1);
+        const decoded = jwt.verify(cleanToken, process.env.JWT_SECRET);
+        user = await User.findById(decoded._id);
+      } catch (e) { }
     }
 
     if (user && isAdmin(user)) {
@@ -205,11 +206,11 @@ app.get('/api/posts/:id', async (req, res) => {
 
 app.post('/api/posts', auth, async (req, res) => {
   try {
-    const post = new Post({ 
-        title: req.body.title,
-        content: req.body.content,
-        isPrivate: req.body.isPrivate || false,
-        author: req.user._id 
+    const post = new Post({
+      title: req.body.title,
+      content: req.body.content,
+      isPrivate: req.body.isPrivate || false,
+      author: req.user._id
     });
     await post.save();
     res.json(post);
@@ -227,19 +228,19 @@ app.put('/api/posts/:id', auth, async (req, res) => {
 
     if (req.body.title) post.title = req.body.title;
     if (req.body.content) post.content = req.body.content;
-    
+
     if (isAdmin(user)) {
-       if (req.body.hiddenByAdmin === true) {
-          post.hiddenByAdmin = true;
-          if (req.body.takedownReason) post.takedownReason = req.body.takedownReason;
-       } 
-       else if (req.body.hiddenByAdmin === false) {
-          post.hiddenByAdmin = false;
-          post.takedownReason = null; 
-          post.isPrivate = false; 
-       }
+      if (req.body.hiddenByAdmin === true) {
+        post.hiddenByAdmin = true;
+        if (req.body.takedownReason) post.takedownReason = req.body.takedownReason;
+      }
+      else if (req.body.hiddenByAdmin === false) {
+        post.hiddenByAdmin = false;
+        post.takedownReason = null;
+        post.isPrivate = false;
+      }
     } else {
-       if (req.body.isPrivate !== undefined) post.isPrivate = req.body.isPrivate;
+      if (req.body.isPrivate !== undefined) post.isPrivate = req.body.isPrivate;
     }
     await post.save();
     res.json(post);
@@ -251,8 +252,8 @@ app.delete('/api/posts/:id', auth, async (req, res) => {
     const user = await User.findById(req.user._id);
     if (isAdmin(user)) await Post.findByIdAndDelete(req.params.id);
     else {
-       const post = await Post.findOneAndDelete({ _id: req.params.id, author: req.user._id });
-       if(!post) return res.status(403).send('Unauthorized');
+      const post = await Post.findOneAndDelete({ _id: req.params.id, author: req.user._id });
+      if (!post) return res.status(403).send('Unauthorized');
     }
     res.json({ message: 'Deleted' });
   } catch (err) { res.status(500).send('Error'); }
@@ -262,7 +263,7 @@ app.put('/api/posts/:id/react', auth, async (req, res) => {
   try {
     const { emoji } = req.body;
     const post = await Post.findById(req.params.id);
-    if(!post.reactions) post.reactions = [];
+    if (!post.reactions) post.reactions = [];
     const existingIndex = post.reactions.findIndex(r => r.user.toString() === req.user._id && r.emoji === emoji);
     if (existingIndex > -1) post.reactions.splice(existingIndex, 1);
     else post.reactions.push({ user: req.user._id, emoji });
@@ -285,7 +286,7 @@ app.post('/api/posts/:id/comment', auth, async (req, res) => {
 });
 
 app.delete('/api/posts/:id/comment/:commentId', auth, async (req, res) => {
-   try {
+  try {
     const post = await Post.findById(req.params.id);
     const comment = post.comments.id(req.params.commentId);
     const user = await User.findById(req.user._id);
@@ -294,7 +295,7 @@ app.delete('/api/posts/:id/comment/:commentId', auth, async (req, res) => {
     await post.save();
     const uPost = await Post.findById(req.params.id).populate('author', 'username').populate('comments.user', 'username');
     res.json(uPost);
-   } catch (err) { res.status(500).send('Error'); }
+  } catch (err) { res.status(500).send('Error'); }
 });
 
 const PORT = process.env.PORT || 5000;
