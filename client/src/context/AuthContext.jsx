@@ -3,39 +3,38 @@ import { createContext, useState, useContext, useEffect } from 'react';
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  // Initialize state safely
   const [token, setToken] = useState(() => {
-      const t = localStorage.getItem('token');
-      return (t && t !== 'undefined' && t !== 'null') ? t : null;
+      return localStorage.getItem('token') || null;
   });
   
   const [user, setUser] = useState(() => {
-      const u = localStorage.getItem('user');
-      try { return u ? JSON.parse(u) : null; } catch { return null; }
+      try { return JSON.parse(localStorage.getItem('user')); } catch { return null; }
   });
 
   useEffect(() => {
-    // If token is invalid, clear everything
-    if (!token || token === 'undefined' || token === 'null') {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        setUser(null);
+    // SELF-HEALING: If token is corrupted (has > 2 dots), nuke it immediately.
+    if (token && (token.match(/\./g) || []).length > 2) {
+        console.error("💥 Corrupted Token Detected. Purging storage.");
+        logout();
     }
   }, [token]);
 
   const login = (newToken, newUser) => {
-    // SANITIZATION
-    if (!newToken || typeof newToken !== 'string') {
-        console.error("Login attempt with invalid token:", newToken);
-        return;
+    if (!newToken || typeof newToken !== 'string') return;
+    
+    // Safety clean before saving
+    let clean = newToken.trim();
+    if (clean.startsWith('"')) clean = clean.slice(1, -1);
+    
+    // Prevent double-token save
+    if ((clean.match(/\./g) || []).length > 2) {
+         clean = clean.split('.').slice(0, 3).join('.');
     }
-    
-    const cleanToken = newToken.trim();
-    
-    setToken(cleanToken);
+
+    setToken(clean);
     setUser(newUser);
     
-    localStorage.setItem('token', cleanToken);
+    localStorage.setItem('token', clean);
     localStorage.setItem('user', JSON.stringify(newUser));
   };
 
@@ -44,8 +43,6 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    // Force reload to clear memory state
-    window.location.href = '/login';
   };
 
   return (
