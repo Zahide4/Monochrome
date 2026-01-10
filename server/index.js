@@ -5,7 +5,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { OAuth2Client } = require('google-auth-library');
 
-// SECURITY PACKAGES
+// SECURITY
 const mongoSanitize = require('express-mongo-sanitize');
 const helmet = require('helmet');
 const xss = require('xss-clean');
@@ -20,18 +20,14 @@ const auth = require('./middleware/auth');
 
 const app = express();
 
-// --- 1. TRUST PROXY (Required for Render) ---
 app.set('trust proxy', 1);
 
-// --- 2. CORS (MUST BE FIRST) ---
-// This allows the browser to connect before security checks block it
 app.use(cors({
   origin: ["https://monochrome-beryl.vercel.app", "http://localhost:5173"],
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true
 }));
 
-// --- 3. SECURITY MIDDLEWARE ---
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" },
   crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" }
@@ -42,39 +38,34 @@ app.use(mongoSanitize());
 app.use(xss());
 app.use(hpp());
 
-// Rate Limit
 const limiter = rateLimit({
   windowMs: 10 * 60 * 1000,
-  max: 150,
-  standardHeaders: true,
-  legacyHeaders: false,
+  max: 200,
 });
 app.use('/api', limiter);
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
-// --- DB CONNECTION ---
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('✅ MongoDB Connected'))
-  .catch(err => console.error('❌ MongoDB Connection Error:', err));
+  .catch(err => console.error(err));
 
 const isAdmin = (user) => user && user.role === 'admin';
 
 app.get('/ping', (req, res) => res.send('pong'));
 
-// --- AUTH ROUTERS ---
-
+// --- AUTH ---
 app.post('/api/register', async (req, res) => {
   try {
     const { email, username, password } = req.body;
     const existingUser = await User.findOne({ email });
-    if(existingUser) return res.status(400).send('Email already exists');
+    if(existingUser) return res.status(400).send('Email exists');
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
     const user = new User({ email, username, password: hashedPassword, role: 'user' });
     await user.save();
-    res.status(201).send('User registered');
-  } catch (err) { res.status(500).send(err.message); }
+    res.status(201).send('Registered');
+  } catch (err) { res.status(500).send('Error'); }
 });
 
 app.post('/api/setup-admin', async (req, res) => {
@@ -82,11 +73,11 @@ app.post('/api/setup-admin', async (req, res) => {
     const { email, secretKey } = req.body;
     if (secretKey !== process.env.JWT_SECRET) return res.status(403).send('Forbidden');
     const user = await User.findOne({ email });
-    if (!user) return res.status(404).send('User not found');
+    if (!user) return res.status(404).send('Not found');
     user.role = 'admin';
     await user.save();
-    res.send('User is now Admin');
-  } catch (err) { res.status(500).send(err.message); }
+    res.send('Promoted');
+  } catch (err) { res.status(500).send('Error'); }
 });
 
 app.post('/api/login', async (req, res) => {
@@ -94,34 +85,35 @@ app.post('/api/login', async (req, res) => {
     const { email, password } = req.body;
     const user = await User.findOne({ email });
     if (!user) return res.status(400).send('User not found');
-    if (!user.password) return res.status(400).send('Use Google Login');
-    const validPass = await bcrypt.compare(password, user.password);
-    if (!validPass) return res.status(400).send('Invalid password');
+    if (!user.password) return res.status(400).send('Use Google');
+    const valid = await bcrypt.compare(password, user.password);
+    if (!valid) return res.status(400).send('Invalid');
     const token = jwt.sign({ _id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
     res.json({ token, user: { id: user._id, username: user.username, role: user.role } });
-  } catch (err) { res.status(500).send('Login Error'); }
+  } catch (err) { res.status(500).send('Error'); }
 });
 
 app.post('/api/google-login', async (req, res) => {
   try {
     const { token } = req.body;
     const ticket = await googleClient.verifyIdToken({ idToken: token, audience: process.env.GOOGLE_CLIENT_ID });
-    const { email, name, sub } = ticket.getPayload();
-    let user = await User.findOne({ email });
+    const payload = ticket.getPayload();
+    let user = await User.findOne({ email: payload.email });
     if (!user) {
-      user = new User({ email, username: name, googleId: sub, role: 'user' });
+      user = new User({ email: payload.email, username: payload.name, googleId: payload.sub, role: 'user' });
       await user.save();
     }
     const appToken = jwt.sign({ _id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
     res.json({ token: appToken, user: { id: user._id, username: user.username, role: user.role } });
-  } catch (error) { res.status(400).send('Google Auth Failed'); }
+  } catch (error) { res.status(400).send('Auth Failed'); }
 });
 
-// --- POST ROUTES ---
+// --- POST LOGIC ---
 
 app.get('/api/posts', async (req, res) => {
   try {
     const token = req.header('Authorization')?.replace('Bearer ', '');
+    // DEFAULT: Show Public posts that are NOT hidden. $ne: true handles old posts missing the field.
     let query = { isPrivate: false, hiddenByAdmin: { $ne: true } };
 
     if (token) {
@@ -130,12 +122,17 @@ app.get('/api/posts', async (req, res) => {
         const user = await User.findById(decoded._id);
         
         if (isAdmin(user)) {
+           // ADMIN: See Public + Anything Hidden by Admin
            query = { $or: [ { isPrivate: false }, { hiddenByAdmin: true } ] };
         } else {
+           // USER: 
+           // 1. Public posts (not hidden)
+           // 2. My posts (EVEN IF HIDDEN by admin, so I can see the ban message)
+           // 3. My private posts
            query = {
              $or: [
                { isPrivate: false, hiddenByAdmin: { $ne: true } },
-               { author: decoded._id }
+               { author: decoded._id } 
              ]
            };
         }
@@ -151,8 +148,7 @@ app.get('/api/posts/:id', async (req, res) => {
     const post = await Post.findById(req.params.id)
       .populate('author', 'username')
       .populate('comments.user', 'username');
-      
-    if (!post) return res.status(404).json({ message: 'Post not found' });
+    if (!post) return res.status(404).json({ message: 'Not found' });
 
     const token = req.header('Authorization')?.replace('Bearer ', '');
     let user = null;
@@ -163,20 +159,26 @@ app.get('/api/posts/:id', async (req, res) => {
        } catch (e) {}
     }
 
+    // ADMIN RIGHTS
     if (user && isAdmin(user)) {
+      // COMPLIANCE: If user made it private, and admin DID NOT hide it, Admin can't see.
       if (post.isPrivate && !post.hiddenByAdmin) {
          return res.status(403).json({ message: 'Compliance: Admin cannot view private user posts.' });
       }
-      return res.json(post);
+      return res.json(post); // Admin can see Public or HiddenByAdmin
     }
 
-    if (post.isPrivate || post.hiddenByAdmin) {
-       if (!user || post.author._id.toString() !== user._id.toString()) {
-          return res.status(403).json({ message: 'Unauthorized' });
-       }
+    // AUTHOR RIGHTS (Can always see own post, even if banned)
+    if (user && post.author._id.toString() === user._id.toString()) {
+       return res.json(post);
     }
+
+    // PUBLIC RIGHTS
+    if (post.hiddenByAdmin) return res.status(403).json({ message: 'Content Removed by Admin' });
+    if (post.isPrivate) return res.status(403).json({ message: 'Private Post' });
+
     res.json(post);
-  } catch (err) { res.status(500).json({ message: 'Server Error' }); }
+  } catch (err) { res.status(500).json({ message: 'Error' }); }
 });
 
 app.post('/api/posts', auth, async (req, res) => {
@@ -205,12 +207,22 @@ app.put('/api/posts/:id', auth, async (req, res) => {
     if (req.body.title) post.title = req.body.title;
     if (req.body.content) post.content = req.body.content;
     
+    // ADMIN ACTIONS
     if (isAdmin(user)) {
-       if (req.body.hiddenByAdmin !== undefined) {
-          post.hiddenByAdmin = req.body.hiddenByAdmin;
-          if(post.hiddenByAdmin) post.isPrivate = true;
+       // HIDING
+       if (req.body.hiddenByAdmin === true) {
+          post.hiddenByAdmin = true;
+          if (req.body.takedownReason) post.takedownReason = req.body.takedownReason;
+       } 
+       // UNHIDING / RESTORING
+       else if (req.body.hiddenByAdmin === false) {
+          post.hiddenByAdmin = false;
+          post.takedownReason = null; 
+          // Restore visibility (set to Public)
+          post.isPrivate = false; 
        }
     } else {
+       // USER ACTIONS
        if (req.body.isPrivate !== undefined) post.isPrivate = req.body.isPrivate;
     }
 

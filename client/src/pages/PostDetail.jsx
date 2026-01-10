@@ -3,11 +3,12 @@ import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import ReactionBar from '../components/ReactionBar';
+import CommentSection from '../components/CommentSection';
 
 export default function PostDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const [post, setPost] = useState(null);
 
   useEffect(() => {
@@ -25,6 +26,20 @@ export default function PostDetail() {
 
   return (
     <div className="fade-in">
+      {/* BANNED NOTICE FOR AUTHOR */}
+      {post.hiddenByAdmin && (
+        <div style={{ 
+            padding: '1.5rem', marginBottom: '2rem', 
+            background: '#fee2e2', border: '1px solid #ef4444', 
+            color: '#7f1d1d' 
+        }}>
+            <h3 className="font-mono" style={{ margin: 0, fontWeight: 'bold' }}>⚠️ CONTENT REMOVED BY ADMIN</h3>
+            <p className="font-serif" style={{ marginTop: '0.5rem' }}>
+               Reason: {post.takedownReason || 'Violates community guidelines.'}
+            </p>
+        </div>
+      )}
+
       <div className="detail-meta">
         {new Date(post.createdAt).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
       </div>
@@ -38,9 +53,10 @@ export default function PostDetail() {
 
       <div className="detail-content">{post.content}</div>
 
-      <div style={{ marginTop: '3rem', marginBottom: '0rem' }}>
-        <h3 className="font-mono uppercase" style={{ fontWeight: 400, fontSize: '0.75rem', color: '#a1a1aa', marginBottom: '0rem' }}>Reader Reactions</h3>
+      <div style={{ marginTop: '3rem', marginBottom: '5rem' }}>
+        <h3 className="font-mono uppercase" style={{ fontSize: '0.75rem', color: '#a1a1aa', marginBottom: '0.5rem' }}>Reader Reactions</h3>
         <ReactionBar post={post} onUpdate={setPost} />
+        <CommentSection post={post} onUpdate={setPost} />
       </div>
     </div>
   );

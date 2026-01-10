@@ -7,15 +7,19 @@ const ReactionSchema = new mongoose.Schema({
 
 const CommentSchema = new mongoose.Schema({
   user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  text: { type: String, required: true, maxlength: 500 }, // Prevent massive spam
+  text: { type: String, required: true, maxlength: 1000 },
   createdAt: { type: Date, default: Date.now }
 });
 
 const PostSchema = new mongoose.Schema({
-  title: { type: String, required: true, trim: true, maxlength: 200 },
+  title: { type: String, required: true },
   content: { type: String, required: true },
   isPrivate: { type: Boolean, default: false },
-  hiddenByAdmin: { type: Boolean, default: false }, // Admin Compliance
+  
+  // ADMIN FIELDS
+  hiddenByAdmin: { type: Boolean, default: false },
+  takedownReason: { type: String, default: null }, 
+  
   author: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   reactions: [ReactionSchema],
   comments: [CommentSchema],
