@@ -21,9 +21,8 @@ const app = express();
 
 app.set('trust proxy', 1);
 
-// CORS CONFIGURATION
 app.use(cors({
-  origin: ["https://monochrome-beryl.vercel.app", "http://localhost:5173"], 
+  origin: ["https://monochrome-beryl.vercel.app", "http://localhost:5173"],
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true
 }));
@@ -52,7 +51,7 @@ mongoose.connect(process.env.MONGO_URI)
 
 const isAdmin = (user) => user && user.role === 'admin';
 
-// --- INLINE AUTH MIDDLEWARE ---
+// --- AUTH MIDDLEWARE ---
 const auth = (req, res, next) => {
   try {
     const authHeader = req.header('Authorization');
@@ -63,22 +62,23 @@ const auth = (req, res, next) => {
     if (token.startsWith('"') && token.endsWith('"')) token = token.slice(1, -1);
 
     if (!process.env.JWT_SECRET) {
-        console.error("❌ CRITICAL: JWT_SECRET is missing in environment!");
+        console.error("❌ CRITICAL: JWT_SECRET is missing!");
         return res.status(500).json({ message: 'Server Config Error' });
     }
 
     const verified = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = verified;
+    req.user = verified; // This contains { _id, role }
     next();
+    
   } catch (err) {
-    console.error("❌ JWT Verify Failed:", err.message);
+    console.error("❌ JWT Error:", err.message);
     res.status(400).json({ message: 'Invalid Token', details: err.message });
   }
 };
 
 app.get('/ping', (req, res) => res.send('pong'));
 
-// --- AUTH ROUTERS ---
+// --- AUTH ROUTES ---
 
 app.post('/api/register', async (req, res) => {
   try {
@@ -138,8 +138,9 @@ app.post('/api/google-login', async (req, res) => {
   } catch (error) { res.status(400).send('Auth Failed'); }
 });
 
-// --- POSTS ---
+// --- POST ROUTES ---
 
+// 1. Get All Posts (Feed)
 app.get('/api/posts', async (req, res) => {
   try {
     const token = req.header('Authorization')?.replace('Bearer ', '');
@@ -147,7 +148,11 @@ app.get('/api/posts', async (req, res) => {
 
     if (token) {
       try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        // We try to decode cleanly. If it fails, we just show public posts.
+        let cleanToken = token.trim();
+        if (cleanToken.startsWith('"') && cleanToken.endsWith('"')) cleanToken = cleanToken.slice(1, -1);
+        
+        const decoded = jwt.verify(cleanToken, process.env.JWT_SECRET);
         const user = await User.findById(decoded._id);
         
         if (isAdmin(user)) {
@@ -160,13 +165,37 @@ app.get('/api/posts', async (req, res) => {
              ]
            };
         }
-      } catch (e) {}
+      } catch (e) {
+          // Token invalid? Just ignore and show public.
+          console.log("Feed Auth Warning:", e.message);
+      }
     }
     const posts = await Post.find(query).populate('author', 'username').sort({ createdAt: -1 });
     res.json(posts);
   } catch (err) { res.status(500).send('Server Error'); }
 });
 
+// 2. My Logs (FIXED)
+app.get('/api/posts/mine', auth, async (req, res) => {
+  try {
+    // Debugging: Ensure we have an ID
+    if (!req.user || !req.user._id) {
+        console.error("MyLogs Failed: No user ID in token", req.user);
+        return res.status(400).json({ message: "User ID missing from token" });
+    }
+    
+    // Explicit Cast to ObjectId to prevent 500 errors
+    const userId = new mongoose.Types.ObjectId(req.user._id);
+    
+    const posts = await Post.find({ author: userId }).populate('author', 'username').sort({ createdAt: -1 });
+    res.json(posts);
+  } catch (err) { 
+    console.error("My Logs Error:", err);
+    res.status(500).json({ message: "Server Error Fetching Logs", error: err.message }); 
+  }
+});
+
+// 3. Get Single Post
 app.get('/api/posts/:id', async (req, res) => {
   try {
     const post = await Post.findById(req.params.id)
@@ -178,9 +207,11 @@ app.get('/api/posts/:id', async (req, res) => {
     let user = null;
     if (token) {
        try { 
-         const decoded = jwt.verify(token, process.env.JWT_SECRET); 
+         let cleanToken = token.trim();
+         if (cleanToken.startsWith('"') && cleanToken.endsWith('"')) cleanToken = cleanToken.slice(1, -1);
+         const decoded = jwt.verify(cleanToken, process.env.JWT_SECRET); 
          user = await User.findById(decoded._id);
-      } catch (e) {}
+       } catch (e) {}
     }
 
     if (user && isAdmin(user)) {
@@ -201,19 +232,32 @@ app.get('/api/posts/:id', async (req, res) => {
   } catch (err) { res.status(500).json({ message: 'Error' }); }
 });
 
+// 4. Create Post (FIXED)
 app.post('/api/posts', auth, async (req, res) => {
   try {
+    console.log("Attempting to create post for:", req.user._id); // DEBUG LOG
+    
+    if (!req.body.title || !req.body.content) {
+        return res.status(400).json({ message: "Title and Content required" });
+    }
+
     const post = new Post({ 
         title: req.body.title,
         content: req.body.content,
-        isPrivate: req.body.isPrivate,
-        author: req.user._id 
+        isPrivate: req.body.isPrivate || false,
+        author: req.user._id // Mongoose handles the cast
     });
+    
     await post.save();
+    console.log("Post created successfully:", post._id);
     res.json(post);
-  } catch (err) { res.status(500).send('Error'); }
+  } catch (err) { 
+    console.error("Create Post Error:", err);
+    res.status(500).json({ message: "Failed to create post", error: err.message }); 
+  }
 });
 
+// 5. Update Post
 app.put('/api/posts/:id', auth, async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
@@ -246,6 +290,7 @@ app.put('/api/posts/:id', auth, async (req, res) => {
   } catch (err) { res.status(500).send('Error'); }
 });
 
+// 6. Delete Post
 app.delete('/api/posts/:id', auth, async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
@@ -258,16 +303,7 @@ app.delete('/api/posts/:id', auth, async (req, res) => {
   } catch (err) { res.status(500).send('Error'); }
 });
 
-app.get('/api/posts/mine', auth, async (req, res) => {
-  try {
-    const posts = await Post.find({ author: req.user._id }).populate('author', 'username').sort({ createdAt: -1 });
-    res.json(posts);
-  } catch (err) { 
-    console.error("Archive Error:", err);
-    res.status(500).send('Error'); 
-  }
-});
-
+// 7. Reactions & Comments
 app.put('/api/posts/:id/react', auth, async (req, res) => {
   try {
     const { emoji } = req.body;
@@ -305,7 +341,7 @@ app.delete('/api/posts/:id/comment/:commentId', auth, async (req, res) => {
     await post.save();
     const uPost = await Post.findById(req.params.id).populate('author', 'username').populate('comments.user', 'username');
     res.json(uPost);
-   } catch (err) { res.status(500).send('Error'); }
+   }} catch (err) { res.status(500).send('Error'); }
 });
 
 const PORT = process.env.PORT || 5000;
