@@ -1002,3 +1002,125 @@ textarea {
   margin-top: 0.5rem;
   font-style: italic;
 }
+
+/* ADMIN LAYOUT UTILITIES */
+.admin-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding-bottom: 4rem;
+}
+
+.admin-header {
+  margin-bottom: 3rem;
+  border-bottom: 1px solid var(--text-color);
+  padding-bottom: 1rem;
+}
+
+.admin-header-meta {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--zinc-600);
+}
+
+.admin-stats-grid {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 3rem;
+  flex-wrap: wrap;
+}
+
+.admin-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.admin-filter-group {
+  display: flex;
+  gap: 1rem;
+}
+
+.admin-search-input {
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--zinc-200);
+  width: 300px;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  background: white;
+}
+
+.admin-btn-text {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+}
+
+.admin-btn-active {
+  font-weight: bold;
+  color: var(--text-color);
+}
+
+.admin-btn-inactive {
+  font-weight: normal;
+  color: var(--zinc-500);
+  text-decoration: none;
+}
+
+.admin-btn-danger {
+  color: #991b1b;
+}
+
+.admin-actions {
+  text-align: right; 
+  display: flex; 
+  gap: 1rem; 
+  justify-content: flex-end;
+}
+
+.admin-reason-box {
+  margin-top: 1rem;
+  padding: 1rem;
+  background-color: white;
+  border: 1px solid var(--zinc-200);
+}
+
+.admin-reason-input-group {
+  display: flex;
+  gap: 1rem;
+}
+
+.admin-input-reason {
+  flex: 1;
+  padding: 0.5rem;
+  border: 1px solid var(--zinc-400);
+  font-family: var(--font-serif);
+}
+
+.btn-small {
+  font-size: 0.7rem; 
+  padding: 4px 12px;
+  text-transform: uppercase;
+  border-radius: 4px;
+}
+
+.btn-confirm {
+  background-color: #991b1b;
+  color: white;
+}
+
+.btn-cancel {
+  border: 1px solid var(--zinc-400);
+  color: var(--zinc-600);
+}

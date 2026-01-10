@@ -26,7 +26,7 @@ export default function AdminPanel() {
     } catch (err) { console.error(err); }
   };
 
-  // --- STATS CALCULATION (REMOVED PRIVATE) ---
+  // Stats Calculation
   const stats = useMemo(() => {
     return {
       total: posts.length,
@@ -35,7 +35,7 @@ export default function AdminPanel() {
     };
   }, [posts]);
 
-  // --- FILTERING ---
+  // Filtering
   const filteredPosts = posts.filter(post => {
     const matchesSearch = post.title.toLowerCase().includes(search.toLowerCase()) || 
                           post.author?.username.toLowerCase().includes(search.toLowerCase());
@@ -43,7 +43,7 @@ export default function AdminPanel() {
     return matchesSearch && matchesFilter;
   });
 
-  // --- ACTIONS ---
+  // Actions
   const submitTakeDown = async (post) => {
     if (!reason.trim()) return alert("Reason is required.");
     try {
@@ -68,66 +68,48 @@ export default function AdminPanel() {
     } catch (err) { alert('Error'); }
   };
 
-  // --- STYLES ---
-  const statBoxStyle = {
-    border: '1px solid #e4e4e7', padding: '1.5rem', flex: 1, backgroundColor: 'white'
-  };
-  const statLabelStyle = {
-    fontFamily: 'monospace', fontSize: '0.7rem', color: '#71717a', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '0.5rem'
-  };
-  const statValueStyle = {
-    fontFamily: 'serif', fontSize: '2rem', margin: 0
-  };
-
   return (
-    <div className="fade-in" style={{ maxWidth: '1200px', margin: '0 auto', paddingBottom: '4rem' }}>
+    <div className="fade-in admin-container">
       
       {/* HEADER */}
-      <div style={{ marginBottom: '3rem', borderBottom: '1px solid #000', paddingBottom: '1rem' }}>
-        <h1 style={{ fontFamily: 'serif', fontSize: '2.5rem', margin: 0, fontWeight: 'normal' }}>Dashboard</h1>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.5rem', fontFamily: 'monospace', fontSize: '0.75rem', color: '#52525b' }}>
+      <div className="admin-header">
+        <h1 className="header-title" style={{ fontSize: '2.5rem', textAlign: 'left', marginBottom: '0' }}>Dashboard</h1>
+        <div className="admin-header-meta">
             <span>ADMINISTRATOR ACCESS</span>
             <span>LOGGED IN AS: {user?.username?.toUpperCase()}</span>
         </div>
       </div>
 
-      {/* STATS GRID (3 COLUMNS NOW) */}
-      <div style={{ display: 'flex', gap: '1rem', marginBottom: '3rem', flexWrap: 'wrap' }}>
-        <div style={statBoxStyle}>
-            <div style={statLabelStyle}>Total Visible Entries</div>
-            <h3 style={statValueStyle}>{stats.total}</h3>
+      {/* STATS GRID */}
+      <div className="admin-stats-grid">
+        <div className="admin-stat-box">
+            <div className="admin-stat-label">Total Visible Entries</div>
+            <h3 className="admin-stat-value">{stats.total}</h3>
         </div>
-        <div style={statBoxStyle}>
-            <div style={statLabelStyle}>Active / Public</div>
-            <h3 style={statValueStyle}>{stats.active}</h3>
+        <div className="admin-stat-box">
+            <div className="admin-stat-label">Active / Public</div>
+            <h3 className="admin-stat-value">{stats.active}</h3>
         </div>
-        <div style={{ ...statBoxStyle, backgroundColor: stats.banned > 0 ? '#fff1f2' : 'white', borderColor: stats.banned > 0 ? '#fecaca' : '#e4e4e7' }}>
-            <div style={{ ...statLabelStyle, color: stats.banned > 0 ? '#991b1b' : '#71717a' }}>Take Downs</div>
-            <h3 style={{ ...statValueStyle, color: stats.banned > 0 ? '#991b1b' : 'black' }}>{stats.banned}</h3>
+        <div className="admin-stat-box" style={{ 
+            backgroundColor: stats.banned > 0 ? '#fff1f2' : 'white', 
+            borderColor: stats.banned > 0 ? '#fecaca' : '#e4e4e7' 
+        }}>
+            <div className="admin-stat-label" style={{ color: stats.banned > 0 ? '#991b1b' : 'inherit' }}>Take Downs</div>
+            <h3 className="admin-stat-value" style={{ color: stats.banned > 0 ? '#991b1b' : 'inherit' }}>{stats.banned}</h3>
         </div>
       </div>
 
       {/* CONTROLS */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
-        <div style={{ display: 'flex', gap: '1rem' }}>
+      <div className="admin-controls">
+        <div className="admin-filter-group">
             <button 
                 onClick={() => setFilter('ALL')}
-                style={{ 
-                    background: 'none', border: 'none', padding: 0, cursor: 'pointer',
-                    fontFamily: 'monospace', fontSize: '0.8rem', 
-                    fontWeight: filter === 'ALL' ? 'bold' : 'normal',
-                    textDecoration: filter === 'ALL' ? 'underline' : 'none'
-                }}>
+                className={`admin-btn-text ${filter === 'ALL' ? 'admin-btn-active' : 'admin-btn-inactive'}`}>
                 ALL ENTRIES
             </button>
             <button 
                 onClick={() => setFilter('BANNED')}
-                style={{ 
-                    background: 'none', border: 'none', padding: 0, cursor: 'pointer',
-                    fontFamily: 'monospace', fontSize: '0.8rem', color: '#991b1b',
-                    fontWeight: filter === 'BANNED' ? 'bold' : 'normal',
-                    textDecoration: filter === 'BANNED' ? 'underline' : 'none'
-                }}>
+                className={`admin-btn-text admin-btn-danger ${filter === 'BANNED' ? 'admin-btn-active' : 'admin-btn-inactive'}`}>
                 FLAGGED / BANNED
             </button>
         </div>
@@ -137,17 +119,13 @@ export default function AdminPanel() {
             placeholder="Search titles or authors..." 
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            style={{ 
-                padding: '0.5rem 1rem', border: '1px solid #d4d4d8', width: '300px',
-                fontFamily: 'monospace', fontSize: '0.8rem'
-            }}
+            className="admin-search-input"
         />
       </div>
 
       {/* DATA TABLE */}
       <div style={{ borderTop: '1px solid #000' }}>
-        {/* Table Header */}
-        <div style={{ display: 'grid', gridTemplateColumns: '3fr 1.5fr 1fr 1fr 1.5fr', padding: '1rem 0', borderBottom: '1px solid #e4e4e7', fontFamily: 'monospace', fontSize: '0.7rem', color: '#71717a', textTransform: 'uppercase' }}>
+        <div className="admin-table-header">
             <div>Title</div>
             <div>Author</div>
             <div>Date</div>
@@ -155,14 +133,9 @@ export default function AdminPanel() {
             <div style={{ textAlign: 'right' }}>Actions</div>
         </div>
 
-        {/* Rows */}
         {filteredPosts.map(post => (
-            <div key={post._id} style={{ 
-                borderBottom: '1px solid #e4e4e7', padding: '1.5rem 0', 
-                backgroundColor: post.hiddenByAdmin ? '#fff1f2' : 'transparent',
-                transition: 'background 0.2s'
-            }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '3fr 1.5fr 1fr 1fr 1.5fr', alignItems: 'center' }}>
+            <div key={post._id} className="admin-table-row" style={{ backgroundColor: post.hiddenByAdmin ? '#fff1f2' : 'transparent' }}>
+                <div className="admin-row-grid">
                     
                     {/* Title */}
                     <div style={{ paddingRight: '1rem' }}>
@@ -187,41 +160,41 @@ export default function AdminPanel() {
                     {/* Status */}
                     <div>
                         {post.hiddenByAdmin ? (
-                            <span style={{ fontSize: '0.6rem', background: '#991b1b', color: '#fff', padding: '2px 6px', fontFamily: 'monospace' }}>BANNED</span>
+                            <span className="badge-banned">BANNED</span>
                         ) : post.isPrivate ? (
-                            <span style={{ fontSize: '0.6rem', background: '#18181b', color: '#fff', padding: '2px 6px', fontFamily: 'monospace' }}>PRIVATE</span>
+                            <span className="badge-private">PRIVATE</span>
                         ) : (
-                            <span style={{ fontSize: '0.6rem', border: '1px solid #16a34a', color: '#16a34a', padding: '2px 6px', fontFamily: 'monospace' }}>PUBLIC</span>
+                            <span className="badge-public">PUBLIC</span>
                         )}
                     </div>
 
                     {/* Actions */}
-                    <div style={{ textAlign: 'right', display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
-                         <button onClick={() => navigate(`/posts/${post._id}`)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'monospace', fontSize: '0.7rem', textDecoration: 'underline' }}>VIEW</button>
+                    <div className="admin-actions">
+                         <button onClick={() => navigate(`/posts/${post._id}`)} className="admin-btn-text">VIEW</button>
                          
                          {post.hiddenByAdmin ? (
-                             <button onClick={() => handleRestore(post)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'monospace', fontSize: '0.7rem', color: '#16a34a', fontWeight: 'bold' }}>RESTORE</button>
+                             <button onClick={() => handleRestore(post)} className="admin-btn-text" style={{ color: '#16a34a', fontWeight: 'bold' }}>RESTORE</button>
                          ) : (
-                             <button onClick={() => setActionId(post._id)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'monospace', fontSize: '0.7rem', color: '#991b1b', fontWeight: 'bold' }}>TAKE DOWN</button>
+                             <button onClick={() => setActionId(post._id)} className="admin-btn-text" style={{ color: '#991b1b', fontWeight: 'bold' }}>TAKE DOWN</button>
                          )}
                     </div>
                 </div>
 
                 {/* EXPANDABLE REASON BOX */}
                 {actionId === post._id && (
-                    <div style={{ marginTop: '1rem', padding: '1rem', backgroundColor: 'white', border: '1px solid #d4d4d8' }}>
+                    <div className="admin-reason-box">
                          <p style={{ fontFamily: 'monospace', fontSize: '0.7rem', marginBottom: '0.5rem' }}>ENTER REASON FOR REMOVAL:</p>
-                         <div style={{ display: 'flex', gap: '1rem' }}>
+                         <div className="admin-reason-input-group">
                              <input 
                                 autoFocus
                                 type="text"
                                 value={reason}
                                 onChange={e => setReason(e.target.value)}
-                                style={{ flex: 1, padding: '0.5rem', border: '1px solid #a1a1aa', fontFamily: 'serif' }}
+                                className="admin-input-reason"
                                 placeholder="Violation of terms..."
                              />
-                             <button onClick={() => submitTakeDown(post)} style={{ backgroundColor: '#991b1b', color: 'white', border: 'none', padding: '0 1rem', fontFamily: 'monospace', fontSize: '0.7rem', cursor: 'pointer' }}>CONFIRM</button>
-                             <button onClick={() => setActionId(null)} style={{ backgroundColor: 'transparent', border: '1px solid #a1a1aa', padding: '0 1rem', fontFamily: 'monospace', fontSize: '0.7rem', cursor: 'pointer' }}>CANCEL</button>
+                             <button onClick={() => submitTakeDown(post)} className="btn-small btn-confirm">CONFIRM</button>
+                             <button onClick={() => setActionId(null)} className="btn-small btn-cancel">CANCEL</button>
                          </div>
                     </div>
                 )}
