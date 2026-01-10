@@ -26,12 +26,11 @@ export default function AdminPanel() {
     } catch (err) { console.error(err); }
   };
 
-  // --- STATS CALCULATION ---
+  // --- STATS CALCULATION (REMOVED PRIVATE) ---
   const stats = useMemo(() => {
     return {
       total: posts.length,
-      public: posts.filter(p => !p.isPrivate && !p.hiddenByAdmin).length,
-      private: posts.filter(p => p.isPrivate).length,
+      active: posts.filter(p => !p.hiddenByAdmin).length,
       banned: posts.filter(p => p.hiddenByAdmin).length
     };
   }, [posts]);
@@ -92,19 +91,15 @@ export default function AdminPanel() {
         </div>
       </div>
 
-      {/* STATS GRID */}
+      {/* STATS GRID (3 COLUMNS NOW) */}
       <div style={{ display: 'flex', gap: '1rem', marginBottom: '3rem', flexWrap: 'wrap' }}>
         <div style={statBoxStyle}>
-            <div style={statLabelStyle}>Total Entries</div>
+            <div style={statLabelStyle}>Total Visible Entries</div>
             <h3 style={statValueStyle}>{stats.total}</h3>
         </div>
         <div style={statBoxStyle}>
-            <div style={statLabelStyle}>Public</div>
-            <h3 style={statValueStyle}>{stats.public}</h3>
-        </div>
-        <div style={statBoxStyle}>
-            <div style={statLabelStyle}>Private</div>
-            <h3 style={statValueStyle}>{stats.private}</h3>
+            <div style={statLabelStyle}>Active / Public</div>
+            <h3 style={statValueStyle}>{stats.active}</h3>
         </div>
         <div style={{ ...statBoxStyle, backgroundColor: stats.banned > 0 ? '#fff1f2' : 'white', borderColor: stats.banned > 0 ? '#fecaca' : '#e4e4e7' }}>
             <div style={{ ...statLabelStyle, color: stats.banned > 0 ? '#991b1b' : '#71717a' }}>Take Downs</div>
@@ -212,7 +207,7 @@ export default function AdminPanel() {
                     </div>
                 </div>
 
-                {/* EXPANDABLE REASON BOX (If Clicked Take Down) */}
+                {/* EXPANDABLE REASON BOX */}
                 {actionId === post._id && (
                     <div style={{ marginTop: '1rem', padding: '1rem', backgroundColor: 'white', border: '1px solid #d4d4d8' }}>
                          <p style={{ fontFamily: 'monospace', fontSize: '0.7rem', marginBottom: '0.5rem' }}>ENTER REASON FOR REMOVAL:</p>
