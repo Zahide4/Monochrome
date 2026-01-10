@@ -19,6 +19,7 @@ const Post = require('./models/Post');
 const auth = require('./middleware/auth');
 
 const app = express();
+app.set('trust proxy', 1); // Fix for Render + Rate Limit
 
 // --- 1. SECURITY MIDDLEWARE ---
 app.use(helmet()); // Secure HTTP Headers
