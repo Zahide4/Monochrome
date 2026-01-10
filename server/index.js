@@ -152,7 +152,7 @@ app.get('/api/posts', async (req, res) => {
 
 
         if (isAdmin(user)) {
-          query = { $or: [{ $or: [{ isPrivate: false }, { hiddenByAdmin: true }] }, { role: 'admin' }] };
+          query = { $or: [{ $or: [{ isPrivate: false }, { hiddenByAdmin: true }] }, { author: decoded._id }] };
         } else {
           query = {
             $or: [
