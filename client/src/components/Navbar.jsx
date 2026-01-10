@@ -18,6 +18,7 @@ export default function Navbar() {
           <Link to="/">READ</Link>
           {user ? (
             <>
+              {user?.role === "admin" && <Link to="/admin" style={{ color: "#991b1b" }}>ADMIN</Link>}
               <Link to="/mine">MY_LOGS</Link>
               <Link to="/create">WRITE</Link>
               <button onClick={logout} className="uppercase">Logout</button>

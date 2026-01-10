@@ -1,3 +1,4 @@
+import AdminPanel from './pages/AdminPanel';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Navbar from './components/Navbar';
@@ -68,6 +69,7 @@ function App() {
               <Route path="/create" element={<PrivateRoute><CreatePost /></PrivateRoute>} />
               <Route path="/edit/:id" element={<PrivateRoute><CreatePost /></PrivateRoute>} />
               <Route path="/mine" element={<PrivateRoute><MyPosts /></PrivateRoute>} />
+              <Route path="/admin" element={<PrivateRoute><AdminPanel /></PrivateRoute>} />
             </Routes>
           </main>
         </div>

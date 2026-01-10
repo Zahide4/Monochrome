@@ -122,7 +122,7 @@ app.post('/api/google-login', async (req, res) => {
 app.get('/api/posts', async (req, res) => {
   try {
     const token = req.header('Authorization')?.replace('Bearer ', '');
-    let query = { isPrivate: false, hiddenByAdmin: false };
+    let query = { isPrivate: false, hiddenByAdmin: { $ne: true } };
 
     if (token) {
       try {
@@ -134,7 +134,7 @@ app.get('/api/posts', async (req, res) => {
         } else {
            query = {
              $or: [
-               { isPrivate: false, hiddenByAdmin: false },
+               { isPrivate: false, hiddenByAdmin: { $ne: true } },
                { author: decoded._id }
              ]
            };
