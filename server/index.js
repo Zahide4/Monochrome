@@ -21,8 +21,9 @@ const app = express();
 
 app.set('trust proxy', 1);
 
+// CORS CONFIGURATION
 app.use(cors({
-  origin: ["https://monochrome-beryl.vercel.app", "http://localhost:5173"], // Ensure this matches your actual Vercel URL
+  origin: ["https://monochrome-beryl.vercel.app", "http://localhost:5173"], 
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true
 }));
