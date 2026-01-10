@@ -1,8 +1,12 @@
 const mongoose = require('mongoose');
+
 const UserSchema = new mongoose.Schema({
-  email: { type: String, required: true, unique: true },
-  username: { type: String, required: true },
-  password: { type: String }, // Optional for Google users
-  googleId: { type: String }, // For Google users
+  email: { type: String, required: true, unique: true, trim: true, lowercase: true },
+  username: { type: String, required: true, trim: true },
+  password: { type: String }, // Hashed
+  googleId: { type: String },
+  // SECURITY: Default is ALWAYS 'user'. Cannot be set via Mass Assignment.
+  role: { type: String, enum: ['user', 'admin'], default: 'user' } 
 });
+
 module.exports = mongoose.model('User', UserSchema);
