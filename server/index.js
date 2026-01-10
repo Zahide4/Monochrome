@@ -51,7 +51,7 @@ mongoose.connect(process.env.MONGO_URI)
 
 const isAdmin = (user) => user && user.role === 'admin';
 
-// --- INLINE AUTH MIDDLEWARE (DEBUG VERSION) ---
+// --- INLINE AUTH MIDDLEWARE ---
 const auth = (req, res, next) => {
   try {
     const authHeader = req.header('Authorization');
@@ -112,7 +112,6 @@ app.post('/api/login', async (req, res) => {
     const user = await User.findOne({ email });
     if (!user) return res.status(400).send('User not found');
     
-    // Check Password
     if (user.password) {
         const valid = await bcrypt.compare(password, user.password);
         if (!valid) return res.status(400).send('Invalid Credentials');
@@ -120,7 +119,6 @@ app.post('/api/login', async (req, res) => {
         return res.status(400).send('Use Google Login');
     }
     
-    // SIGN TOKEN (Using the SAME secret as verify)
     const token = jwt.sign({ _id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
     res.json({ token, user: { id: user._id, username: user.username, role: user.role } });
   } catch (err) { res.status(500).send('Error'); }
@@ -261,7 +259,6 @@ app.delete('/api/posts/:id', auth, async (req, res) => {
   } catch (err) { res.status(500).send('Error'); }
 });
 
-// FIXED ARCHIVE ROUTE
 app.get('/api/posts/mine', auth, async (req, res) => {
   try {
     const posts = await Post.find({ author: req.user._id }).populate('author', 'username').sort({ createdAt: -1 });
