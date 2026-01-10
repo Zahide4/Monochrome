@@ -95,7 +95,7 @@ export default function Home() {
             <div className="card-footer">
               <ReactionBar post={post} onUpdate={handlePostUpdate} />
               {post.isPrivate && <span className="tag-private">PRIVATE</span>}
-                {post.hiddenByAdmin && <span className="tag-private">TAKEN DOWN</span>}
+                {post.hiddenByAdmin && <span className="tag-private tag-taken-down">TAKEN DOWN</span>}
             </div>
           </article>
         ))}
