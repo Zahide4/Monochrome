@@ -3,40 +3,59 @@ const jwt = require('jsonwebtoken');
 const auth = (req, res, next) => {
   try {
     const authHeader = req.header('Authorization');
-    
     if (!authHeader) return res.status(401).json({ message: 'No Auth Header' });
 
-    // 1. Basic cleaning
-    let token = authHeader.replace(/^Bearer\s+/i, "").trim();
-
-    // 2. Remove quotes
-    if (token.startsWith('"') && token.endsWith('"')) {
-        token = token.slice(1, -1);
-    }
-    
-    // 3. Remove whitespace
-    token = token.replace(/\s/g, '');
-
-    // 4. CRITICAL FIX: Handle Double Tokens (Token.Token)
-    // A valid JWT has exactly 2 dots (3 parts). If we see more, it's corrupted.
-    // We assume the FIRST token is the valid one and discard the rest.
-    if ((token.match(/\./g) || []).length > 2) {
-        console.log("⚠️ Detected Double-Token Corruption. Fixing...");
-        const parts = token.split('.');
-        // Keep only the first 3 parts (Header.Payload.Signature)
-        token = parts.slice(0, 3).join('.');
+    // 1. Clean the input
+    let rawString = authHeader.replace(/^Bearer\s+/i, "").replace(/\s/g, '');
+    if (rawString.startsWith('"') && rawString.endsWith('"')) {
+        rawString = rawString.slice(1, -1);
     }
 
-    if (!token) return res.status(401).json({ message: 'Empty Token' });
+    // 2. Extract all potential JWT candidates
+    // A JWT is 3 parts separated by dots. 
+    // If we have TokenA.TokenB, we have 6 parts.
+    // We split by dot, and group them into chunks of 3.
+    const parts = rawString.split('.');
+    const candidates = [];
 
-    // 5. Verify
-    const verified = jwt.verify(token, process.env.JWT_SECRET);
+    // Group into potential tokens (Part1.Part2.Part3)
+    for (let i = 0; i < parts.length; i += 3) {
+        if (parts[i+2]) { // Ensure we have 3 parts
+            candidates.push(parts.slice(i, i+3).join('.'));
+        }
+    }
+
+    if (candidates.length === 0) {
+        return res.status(400).json({ message: 'No valid token format found' });
+    }
+
+    // 3. Try verifying each candidate until one works
+    let verified = null;
+    let lastError = null;
+
+    for (const token of candidates) {
+        try {
+            verified = jwt.verify(token, process.env.JWT_SECRET);
+            if (verified) break; // Found a working token!
+        } catch (err) {
+            lastError = err;
+            // Continue to next candidate
+        }
+    }
+
+    if (!verified) {
+        console.error("❌ All token candidates failed verification.");
+        console.error("Last Error:", lastError.message);
+        return res.status(400).json({ message: 'Invalid Token', details: lastError.message });
+    }
+
+    // Success
     req.user = verified;
     next();
     
   } catch (err) {
-    console.error("JWT Error:", err.message);
-    res.status(400).json({ message: 'Invalid Token', details: err.message });
+    console.error("Auth System Error:", err);
+    res.status(500).json({ message: 'Server Error' });
   }
 };
 
