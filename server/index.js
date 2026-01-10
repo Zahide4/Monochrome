@@ -22,7 +22,11 @@ const app = express();
 app.set('trust proxy', 1); // Fix for Render + Rate Limit
 
 // --- 1. SECURITY MIDDLEWARE ---
-app.use(helmet()); // Secure HTTP Headers
+// HELMET CONFIGURATION (Allow Cross-Origin)
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" }
+})); // Secure HTTP Headers
 app.use(express.json({ limit: '10kb' })); // prevent DoS with huge payloads
 app.use(mongoSanitize()); // STOP NoSQL Injection (The likely hack)
 app.use(xss()); // Clean input
