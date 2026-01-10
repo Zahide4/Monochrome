@@ -28,7 +28,7 @@ export default function MyPosts() {
           <div key={post._id} className="list-item">
             <div>
               <Link to={`/post/${post._id}`} className="list-title">{post.title}</Link>
-              <div className="list-meta">{post.isPrivate ? "PRIVATE" : "PUBLIC"}</div>
+              <div className="list-meta">{post.isPrivate ? "PRIVATE" : "PUBLIC"} {post.hiddenByAdmin && <span style={{ color: "#991b1b", fontWeight: "bold", marginLeft: "10px" }}>[TAKEN DOWN]</span>}</div>
             </div>
             <div className="list-actions">
               <Link to={`/edit/${post._id}`} style={{ color: '#52525b', textDecoration: 'underline' }}>EDIT</Link>

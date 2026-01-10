@@ -95,6 +95,7 @@ export default function Home() {
             <div className="card-footer">
               <ReactionBar post={post} onUpdate={handlePostUpdate} />
               {post.isPrivate && <span className="tag-private">PRIVATE</span>}
+                {post.hiddenByAdmin && <span className="tag-private" style={{background: "#991b1b", color: "white", marginLeft: "6px"}}>TAKEN DOWN</span>}
             </div>
           </article>
         ))}
