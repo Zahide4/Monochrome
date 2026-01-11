@@ -1,21 +1,16 @@
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300..700;1,300..700&family=IBM+Plex+Serif:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&family=IM+Fell+English:ital@0;1&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap');
 
-/* ============================================
-   DESIGN SYSTEM - VARIABLES
-   ============================================ */
+
 :root {
-  /* Typography */
   --font-serif: 'Playfair Display', serif;
   --font-mono: "JetBrains Mono", monospace;
   
-  /* Colors */
   --bg-color: #ffffff;
   --text-primary: #09090b;
   --text-secondary: #52525b;
   --text-tertiary: #a1a1aa;
   
-  /* Neutrals */
   --zinc-50: #fafafa;
   --zinc-100: #f4f4f5;
   --zinc-200: #e4e4e7;
@@ -27,13 +22,11 @@
   --zinc-800: #27272a;
   --zinc-900: #18181b;
   
-  /* Semantic Colors */
   --color-danger: #991b1b;
   --color-danger-light: #fee2e2;
   --color-danger-border: #fecaca;
   --color-success: #16a34a;
   
-  /* Spacing Scale */
   --space-xs: 0.25rem;
   --space-sm: 0.5rem;
   --space-md: 1rem;
@@ -42,12 +35,10 @@
   --space-2xl: 3rem;
   --space-3xl: 4rem;
   
-  /* Border Radius */
   --radius-sm: 4px;
   --radius-md: 6px;
   --radius-lg: 8px;
   
-  /* Typography Scale */
   --text-xs: 0.7rem;
   --text-sm: 0.8rem;
   --text-base: 1rem;
@@ -58,18 +49,14 @@
   --text-4xl: 2.5rem;
   --text-5xl: 3.5rem;
   
-  /* Layout */
   --container-width: 48rem;
   
-  /* Transitions */
   --transition-fast: 0.15s ease;
   --transition-base: 0.2s ease;
   --transition-slow: 0.3s ease;
 }
 
-/* ============================================
-   RESET & BASE STYLES
-   ============================================ */
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -107,9 +94,7 @@ input, textarea {
   font: inherit;
 }
 
-/* ============================================
-   SCROLLBAR
-   ============================================ */
+
 ::-webkit-scrollbar {
   width: 5px;
 }
@@ -127,9 +112,7 @@ input, textarea {
   background: var(--zinc-500);
 }
 
-/* ============================================
-   LOADING SPINNER
-   ============================================ */
+
 .spinner-container {
   width: 100%;
   min-height: 100vh;
@@ -201,9 +184,6 @@ input, textarea {
   100% { background-color: transparent; }
 }
 
-/* ============================================
-   UTILITY CLASSES
-   ============================================ */
 .container {
   max-width: var(--container-width);
   margin: 0 auto;
@@ -230,9 +210,6 @@ input, textarea {
   animation: fadeIn 0.5s ease-out forwards;
 }
 
-/* ============================================
-   NAVBAR
-   ============================================ */
 .navbar {
   position: sticky;
   top: 0;
@@ -294,9 +271,6 @@ input, textarea {
   color: var(--text-primary);
 }
 
-/* ============================================
-   HOME PAGE
-   ============================================ */
 .editorial-header {
   border-bottom: 2px solid var(--zinc-300);
   padding-bottom: var(--space-lg);
@@ -400,9 +374,7 @@ input, textarea {
   color: white!important;
 }
 
-/* ============================================
-   MASONRY GRID
-   ============================================ */
+
 .masonry-grid {
   column-count: 1;
   column-gap: var(--space-xl);
@@ -498,9 +470,6 @@ input, textarea {
   background-color: var(--color-danger);
 }
 
-/* ============================================
-   AUTH PAGES
-   ============================================ */
 .auth-wrapper {
   max-width: 400px;
   margin: 5rem auto 0;
@@ -576,9 +545,7 @@ input, textarea {
   text-transform: uppercase;
 }
 
-/* ============================================
-   POST DETAIL
-   ============================================ */
+
 .detail-meta {
   text-align: center;
   font-family: var(--font-mono);
@@ -622,9 +589,7 @@ input, textarea {
   text-align: justify;
 }
 
-/* ============================================
-   REACTION BAR
-   ============================================ */
+
 .reaction-wrapper {
   display: flex;
   flex-wrap: wrap;
@@ -672,9 +637,6 @@ input, textarea {
   stroke: var(--zinc-700);
 }
 
-/* ============================================
-   EDITOR
-   ============================================ */
 .editor-input-title {
   width: 100%;
   border: none;
@@ -721,9 +683,7 @@ input, textarea {
   color: var(--text-secondary);
 }
 
-/* ============================================
-   MY POSTS LIST
-   ============================================ */
+
 .list-item {
   display: flex;
   justify-content: space-between;
@@ -775,9 +735,7 @@ input, textarea {
   text-decoration: underline;
 }
 
-/* ============================================
-   ADMIN DASHBOARD
-   ============================================ */
+
 .admin-container {
   max-width: 1200px;
   margin: 0 auto;
@@ -1144,9 +1102,6 @@ input, textarea {
   font-size: var(--text-lg);
 }
 
-/* ============================================
-   COMMENTS SECTION
-   ============================================ */
 .comment-section-container {
   margin-top: var(--space-2xl);
   padding-top: var(--space-xl);
@@ -1274,9 +1229,7 @@ input, textarea {
   color: #7f1d1d;
 }
 
-/* ============================================
-   RESPONSIVE DESIGN
-   ============================================ */
+
 @media (max-width: 768px) {
   :root {
     --text-5xl: 2.5rem;

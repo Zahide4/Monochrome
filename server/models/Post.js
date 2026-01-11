@@ -16,7 +16,6 @@ const PostSchema = new mongoose.Schema({
   content: { type: String, required: true },
   isPrivate: { type: Boolean, default: false },
   
-  // ADMIN FIELDS
   hiddenByAdmin: { type: Boolean, default: false },
   takedownReason: { type: String, default: null }, 
   

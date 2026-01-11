@@ -26,7 +26,6 @@ export default function PostDetail() {
 
   return (
     <div className="fade-in">
-      {/* BANNED NOTICE FOR AUTHOR */}
       {post.hiddenByAdmin && (
         <div style={{ 
             padding: '1.5rem', marginBottom: '2rem', 

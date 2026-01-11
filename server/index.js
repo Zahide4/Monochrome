@@ -6,7 +6,6 @@ const jwt = require('jsonwebtoken');
 const { OAuth2Client } = require('google-auth-library');
 const Joi = require('joi');
 
-// SECURITY MIDDLEWARE
 const mongoSanitize = require('express-mongo-sanitize');
 const helmet = require('helmet');
 const xss = require('xss-clean');
@@ -18,9 +17,7 @@ require('dotenv').config();
 const User = require('./models/User');
 const Post = require('./models/Post');
 
-// ============================================
-// CRITICAL: ENV VALIDATION
-// ============================================
+
 const requiredEnvVars = ['MONGO_URI', 'JWT_SECRET', 'GOOGLE_CLIENT_ID', 'ADMIN_SETUP_KEY'];
 const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
 
@@ -38,16 +35,12 @@ const app = express();
 
 app.set('trust proxy', 1);
 
-// ============================================
-// ENHANCED CORS CONFIGURATION
-// ============================================
 const allowedOrigins = process.env.NODE_ENV === 'production'
   ? [process.env.CLIENT_URL || "https://monochromeblog.vercel.app"]
   : ["http://localhost:5173", "http://localhost:5174"];
 
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow requests with no origin (mobile apps, Postman, etc.)
     if (!origin) return callback(null, true);
 
     if (allowedOrigins.indexOf(origin) === -1) {
@@ -57,24 +50,20 @@ app.use(cors({
   },
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true,
-  maxAge: 86400 // 24 hours
+  maxAge: 86400
 }));
 
-// ============================================
-// ENHANCED HELMET CONFIGURATION
-// ============================================
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      // Allow scripts from Google (for the login button to work)
       scriptSrc: ["'self'", "https://cdnjs.cloudflare.com", "https://accounts.google.com"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
-      imgSrc: ["'self'", "data:", "https://ik.imagekit.io", "https://lh3.googleusercontent.com"], // Allow Google profile pics
-      // Allow the frontend to connect to Google's API
+      imgSrc: ["'self'", "data:", "https://ik.imagekit.io", "https://lh3.googleusercontent.com"], 
+     
       connectSrc: ["'self'", "https://accounts.google.com", "https://oauth2.googleapis.com"],
-      // Allow Google iframes (needed for the login popup/OneTap)
+      
       frameSrc: ["'self'", "https://accounts.google.com"],
       objectSrc: ["'none'"]
     }
@@ -93,9 +82,7 @@ app.use(mongoSanitize());
 app.use(xss());
 app.use(hpp());
 
-// ============================================
-// ENHANCED RATE LIMITING
-// ============================================
+
 const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100,
@@ -123,9 +110,7 @@ const createLimiter = rateLimit({
 
 app.use('/api', generalLimiter);
 
-// ============================================
-// VALIDATION SCHEMAS
-// ============================================
+
 const schemas = {
   register: Joi.object({
     email: Joi.string()
@@ -214,7 +199,6 @@ const schemas = {
   })
 };
 
-// Validation middleware
 const validate = (schema) => {
   return (req, res, next) => {
     const { error, value } = schema.validate(req.body, {
@@ -230,14 +214,12 @@ const validate = (schema) => {
       });
     }
 
-    req.body = value; // Use sanitized values
+    req.body = value; 
     next();
   };
 };
 
-// ============================================
-// MONGODB CONNECTION WITH SECURITY OPTIONS
-// ============================================
+
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 mongoose.connect(process.env.MONGO_URI, {
@@ -251,9 +233,7 @@ mongoose.connect(process.env.MONGO_URI, {
     process.exit(1);
   });
 
-// ============================================
-// UTILITY FUNCTIONS
-// ============================================
+
 const isAdmin = (user) => user && user.role === 'admin';
 
 // Enhanced error handler
@@ -270,9 +250,6 @@ const handleError = (res, err, defaultMessage = 'An error occurred') => {
   }
 };
 
-// ============================================
-// AUTH MIDDLEWARE
-// ============================================
 const auth = (req, res, next) => {
   try {
     const authHeader = req.header('Authorization');
@@ -300,9 +277,7 @@ const auth = (req, res, next) => {
   }
 };
 
-// ============================================
-// AUDIT LOGGING
-// ============================================
+
 const auditLog = (action, userId, details = {}) => {
   const logEntry = {
     timestamp: new Date().toISOString(),
@@ -314,17 +289,13 @@ const auditLog = (action, userId, details = {}) => {
     ...details
   };
 
-  // In production, send to logging service (e.g., Winston, Loggly)
   console.log('[AUDIT]', JSON.stringify(logEntry));
 };
 
-// ============================================
-// ROUTES
-// ============================================
 
 app.get('/ping', (req, res) => res.send('pong'));
 
-// --- REGISTRATION ---
+
 app.post('/api/register', authLimiter, validate(schemas.register), async (req, res) => {
   try {
     const { email, username, password } = req.body;
@@ -339,7 +310,6 @@ app.post('/api/register', authLimiter, validate(schemas.register), async (req, r
       return res.status(400).json({ message: 'Email already registered' });
     }
 
-    // Enhanced bcrypt with 12 rounds
     const salt = await bcrypt.genSalt(12);
     const hashedPassword = await bcrypt.hash(password, salt);
 
@@ -367,7 +337,6 @@ app.post('/api/register', authLimiter, validate(schemas.register), async (req, r
   }
 });
 
-// --- ADMIN SETUP (SECURED) ---
 app.post('/api/setup-admin', authLimiter, async (req, res) => {
   try {
     const { email, secretKey } = req.body;
@@ -404,7 +373,6 @@ app.post('/api/setup-admin', authLimiter, async (req, res) => {
   }
 });
 
-// --- LOGIN ---
 app.post('/api/login', authLimiter, validate(schemas.login), async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -461,7 +429,6 @@ app.post('/api/login', authLimiter, validate(schemas.login), async (req, res) =>
   }
 });
 
-// --- GOOGLE LOGIN ---
 app.post('/api/google-login', authLimiter, async (req, res) => {
   try {
     const { token } = req.body;
@@ -522,7 +489,6 @@ app.post('/api/google-login', authLimiter, async (req, res) => {
   }
 });
 
-// --- GET ALL POSTS ---
 app.get('/api/posts', async (req, res) => {
   try {
     const token = req.header('Authorization')?.replace('Bearer ', '');
@@ -553,14 +519,13 @@ app.get('/api/posts', async (req, res) => {
           };
         }
       } catch (e) {
-        // Invalid token, continue with public query
       }
     }
 
     const posts = await Post.find(query)
       .populate('author', 'username')
       .sort({ createdAt: -1 })
-      .limit(100); // Limit results for performance
+      .limit(100); 
 
     res.json(posts);
   } catch (err) {
@@ -568,7 +533,6 @@ app.get('/api/posts', async (req, res) => {
   }
 });
 
-// --- GET USER'S POSTS ---
 app.get('/api/posts/mine', auth, async (req, res) => {
   try {
     const userId = new mongoose.Types.ObjectId(req.user._id);
@@ -581,7 +545,6 @@ app.get('/api/posts/mine', auth, async (req, res) => {
   }
 });
 
-// --- GET SINGLE POST ---
 app.get('/api/posts/:id', async (req, res) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
@@ -608,7 +571,6 @@ app.get('/api/posts/:id', async (req, res) => {
         const decoded = jwt.verify(cleanToken, process.env.JWT_SECRET);
         user = await User.findById(decoded._id);
       } catch (e) {
-        // Invalid token, continue as guest
       }
     }
 
@@ -639,7 +601,6 @@ app.get('/api/posts/:id', async (req, res) => {
   }
 });
 
-// --- CREATE POST ---
 app.post('/api/posts', auth, createLimiter, validate(schemas.post), async (req, res) => {
   try {
     const { title, content, isPrivate } = req.body;
@@ -726,7 +687,6 @@ app.put('/api/posts/:id', auth, validate(schemas.adminUpdate), async (req, res) 
   }
 });
 
-// --- DELETE POST ---
 app.delete('/api/posts/:id', auth, async (req, res) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
@@ -758,7 +718,6 @@ app.delete('/api/posts/:id', auth, async (req, res) => {
   }
 });
 
-// --- REACT TO POST ---
 app.put('/api/posts/:id/react', auth, validate(schemas.reaction), async (req, res) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
@@ -793,8 +752,6 @@ app.put('/api/posts/:id/react', auth, validate(schemas.reaction), async (req, re
     handleError(res, err, 'Failed to react');
   }
 });
-
-// --- ADD COMMENT ---
 app.post('/api/posts/:id/comment', auth, validate(schemas.comment), async (req, res) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
@@ -822,7 +779,6 @@ app.post('/api/posts/:id/comment', auth, validate(schemas.comment), async (req, 
   }
 });
 
-// --- DELETE COMMENT ---
 app.delete('/api/posts/:id/comment/:commentId', auth, async (req, res) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.id) ||
@@ -858,16 +814,12 @@ app.delete('/api/posts/:id/comment/:commentId', auth, async (req, res) => {
   }
 });
 
-// ============================================
-// 404 HANDLER
-// ============================================
+
 app.use((req, res) => {
   res.status(404).json({ message: 'Route not found' });
 });
 
-// ============================================
-// GLOBAL ERROR HANDLER
-// ============================================
+
 app.use((err, req, res, next) => {
   console.error('Global Error:', err);
 
@@ -882,9 +834,7 @@ app.use((err, req, res, next) => {
   }
 });
 
-// ============================================
-// START SERVER
-// ============================================
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on Port ${PORT}`);

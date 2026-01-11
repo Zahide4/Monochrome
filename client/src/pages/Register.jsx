@@ -12,13 +12,13 @@ export default function Register() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setErrors([]); // Clear previous errors
+    setErrors([]); 
     
     try {
       await axios.post('https://monochrome-w1vb.onrender.com/api/register', data);
       navigate('/login');
     } catch (err) {
-      // Handle validation errors
+      
       if (err.response?.data?.errors) {
         setErrors(err.response.data.errors);
       } else if (err.response?.data?.message) {
@@ -45,7 +45,7 @@ export default function Register() {
     <div className="auth-wrapper fade-in">
       <h1 className="auth-title">Join Monochrome</h1>
       
-      {/* Error Display */}
+      
       {errors.length > 0 && (
         <div style={{ 
           padding: '1rem', 

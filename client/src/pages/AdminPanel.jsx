@@ -6,11 +6,10 @@ import { useNavigate } from 'react-router-dom';
 export default function AdminPanel() {
   const [posts, setPosts] = useState([]);
   const [search, setSearch] = useState('');
-  const [filter, setFilter] = useState('ALL'); // ALL, BANNED
+  const [filter, setFilter] = useState('ALL'); 
   const { token, user } = useAuth();
   const navigate = useNavigate();
 
-  // Action State
   const [actionId, setActionId] = useState(null);
   const [reason, setReason] = useState('');
 
@@ -26,7 +25,6 @@ export default function AdminPanel() {
     } catch (err) { console.error(err); }
   };
 
-  // --- STATS CALCULATION ---
   const stats = useMemo(() => {
     return {
       total: posts.length,
@@ -35,7 +33,6 @@ export default function AdminPanel() {
     };
   }, [posts]);
 
-  // --- FILTERING ---
   const filteredPosts = posts.filter(post => {
     const matchesSearch = post.title.toLowerCase().includes(search.toLowerCase()) ||
       post.author?.username.toLowerCase().includes(search.toLowerCase());
@@ -43,7 +40,6 @@ export default function AdminPanel() {
     return matchesSearch && matchesFilter;
   });
 
-  // --- ACTIONS ---
   const submitTakeDown = async (post) => {
     if (!reason.trim()) return alert("Reason is required.");
     try {
@@ -77,7 +73,6 @@ export default function AdminPanel() {
   return (
     <div className="admin-container fade-in">
 
-      {/* HEADER */}
       <div className="admin-header-section">
         <h1 className="admin-page-title">Dashboard</h1>
         <div className="admin-header-info">
@@ -86,7 +81,6 @@ export default function AdminPanel() {
         </div>
       </div>
 
-      {/* STATS GRID */}
       <div className="admin-stats-container">
         <div className="stat-box">
           <div className="stat-label">Total Visible Entries</div>
@@ -102,7 +96,6 @@ export default function AdminPanel() {
         </div>
       </div>
 
-      {/* CONTROLS */}
       <div className="admin-controls">
         <div className="filter-group">
           <button
@@ -126,12 +119,10 @@ export default function AdminPanel() {
         />
       </div>
 
-      {/* GRID VIEW */}
       <div className="admin-grid">
         {filteredPosts.map(post => (
           <div key={post._id} className={`admin-card ${post.hiddenByAdmin ? 'banned' : ''}`}>
 
-            {/* Card Header */}
             <div className="admin-card-header">
               <div className="admin-card-meta">
                 ID: {post._id.slice(-6).toUpperCase()}
@@ -141,7 +132,6 @@ export default function AdminPanel() {
               <div>{getBadge(post)}</div>
             </div>
 
-            {/* Card Content */}
             <div>
               <h3 className="admin-card-title">{post.title}</h3>
               <div className="admin-card-author">
@@ -150,7 +140,6 @@ export default function AdminPanel() {
               </div>
             </div>
 
-            {/* Card Footer / Actions */}
             <div className="admin-card-footer">
               {actionId !== post._id && (
                 <div className="admin-card-actions">
@@ -170,7 +159,6 @@ export default function AdminPanel() {
                 </div>
               )}
 
-              {/* Take Down Form Overlay */}
               {actionId === post._id && (
                 <div className="takedown-form">
                   <p className="takedown-label">REASON FOR REMOVAL:</p>

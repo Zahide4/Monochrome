@@ -5,7 +5,6 @@ const UserSchema = new mongoose.Schema({
   username: { type: String, required: true, trim: true },
   password: { type: String }, // Hashed
   googleId: { type: String },
-  // SECURITY: Default is ALWAYS 'user'. Cannot be set via Mass Assignment.
   role: { type: String, enum: ['user', 'admin'], default: 'user' } 
 });
 
