@@ -113,7 +113,7 @@ export default function AdminPanel() {
           <button
             onClick={() => setFilter('BANNED')}
             className={`filter-btn banned ${filter === 'BANNED' ? 'active' : ''}`}>
-            FLAGGED / BANNED
+            TAKEN DOWN
           </button>
         </div>
 
