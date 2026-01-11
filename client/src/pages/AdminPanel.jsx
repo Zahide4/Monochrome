@@ -21,7 +21,7 @@ export default function AdminPanel() {
 
   const fetchPosts = async () => {
     try {
-      const res = await axios.get('https://monochrome-agc7.onrender.com/api/posts', { headers: { Authorization: `Bearer ${token}` } });
+      const res = await axios.get('https://monochrome-w1vb.onrender.com/api/posts', { headers: { Authorization: `Bearer ${token}` } });
       setPosts(res.data);
     } catch (err) { console.error(err); }
   };
@@ -47,7 +47,7 @@ export default function AdminPanel() {
   const submitTakeDown = async (post) => {
     if (!reason.trim()) return alert("Reason is required.");
     try {
-      await axios.put(`https://monochrome-agc7.onrender.com/api/posts/${post._id}`,
+      await axios.put(`https://monochrome-w1vb.onrender.com/api/posts/${post._id}`,
         { hiddenByAdmin: true, takedownReason: reason },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -60,7 +60,7 @@ export default function AdminPanel() {
   const handleRestore = async (post) => {
     if (!confirm("Restore this post to public view?")) return;
     try {
-      await axios.put(`https://monochrome-agc7.onrender.com/api/posts/${post._id}`,
+      await axios.put(`https://monochrome-w1vb.onrender.com/api/posts/${post._id}`,
         { hiddenByAdmin: false },
         { headers: { Authorization: `Bearer ${token}` } }
       );
