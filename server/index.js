@@ -67,12 +67,15 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "https://cdnjs.cloudflare.com"],
+      // Allow scripts from Google (for the login button to work)
+      scriptSrc: ["'self'", "https://cdnjs.cloudflare.com", "https://accounts.google.com"], 
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
-      imgSrc: ["'self'", "data:", "https://ik.imagekit.io"],
-      connectSrc: ["'self'"],
-      frameSrc: ["'none'"],
+      imgSrc: ["'self'", "data:", "https://ik.imagekit.io", "https://lh3.googleusercontent.com"], // Allow Google profile pics
+      // Allow the frontend to connect to Google's API
+      connectSrc: ["'self'", "https://accounts.google.com", "https://oauth2.googleapis.com"], 
+      // Allow Google iframes (needed for the login popup/OneTap)
+      frameSrc: ["'self'", "https://accounts.google.com"], 
       objectSrc: ["'none'"]
     }
   },
