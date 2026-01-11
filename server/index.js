@@ -126,16 +126,45 @@ app.post('/api/login', async (req, res) => {
 app.post('/api/google-login', async (req, res) => {
   try {
     const { token } = req.body;
-    const ticket = await googleClient.verifyIdToken({ idToken: token, audience: process.env.GOOGLE_CLIENT_ID });
+    const ticket = await googleClient.verifyIdToken({
+      idToken: token,
+      audience: process.env.GOOGLE_CLIENT_ID
+    });
     const payload = ticket.getPayload();
-    let user = await User.findOne({ email: payload.email });
+
+    const normalizedEmail = payload.email.toLowerCase().trim();
+
+    let user = await User.findOne({ email: normalizedEmail });
+
     if (!user) {
-      user = new User({ email: payload.email, username: payload.name, googleId: payload.sub, role: 'user' });
+      // Create new user
+      user = new User({
+        email: normalizedEmail,
+        username: payload.name,
+        googleId: payload.sub,
+        role: 'user'
+      });
+      await user.save();
+    } else if (!user.googleId) {
+      // ✅ User exists via email/password signup, link Google account
+      user.googleId = payload.sub;
       await user.save();
     }
-    const appToken = jwt.sign({ _id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
-    res.json({ token: appToken, user: { id: user._id, username: user.username, role: user.role } });
-  } catch (error) { res.status(400).send('Auth Failed'); }
+
+    const appToken = jwt.sign(
+      { _id: user._id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    res.json({
+      token: appToken,
+      user: { id: user._id, username: user.username, role: user.role }
+    });
+  } catch (error) {
+    console.error('Google Login Error:', error);
+    res.status(400).json({ message: 'Auth Failed', error: error.message });
+  }
 });
 
 app.get('/api/posts', async (req, res) => {
