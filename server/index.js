@@ -49,7 +49,7 @@ app.use(cors({
   origin: function (origin, callback) {
     // Allow requests with no origin (mobile apps, Postman, etc.)
     if (!origin) return callback(null, true);
-    
+
     if (allowedOrigins.indexOf(origin) === -1) {
       return callback(new Error('CORS policy violation'), false);
     }
@@ -68,14 +68,14 @@ app.use(helmet({
     directives: {
       defaultSrc: ["'self'"],
       // Allow scripts from Google (for the login button to work)
-      scriptSrc: ["'self'", "https://cdnjs.cloudflare.com", "https://accounts.google.com"], 
+      scriptSrc: ["'self'", "https://cdnjs.cloudflare.com", "https://accounts.google.com"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
       imgSrc: ["'self'", "data:", "https://ik.imagekit.io", "https://lh3.googleusercontent.com"], // Allow Google profile pics
       // Allow the frontend to connect to Google's API
-      connectSrc: ["'self'", "https://accounts.google.com", "https://oauth2.googleapis.com"], 
+      connectSrc: ["'self'", "https://accounts.google.com", "https://oauth2.googleapis.com"],
       // Allow Google iframes (needed for the login popup/OneTap)
-      frameSrc: ["'self'", "https://accounts.google.com"], 
+      frameSrc: ["'self'", "https://accounts.google.com"],
       objectSrc: ["'none'"]
     }
   },
@@ -128,32 +128,83 @@ app.use('/api', generalLimiter);
 // ============================================
 const schemas = {
   register: Joi.object({
-    email: Joi.string().email().lowercase().trim().max(255).required(),
-    username: Joi.string().trim().min(2).max(50).required(),
-    password: Joi.string().min(8).max(128).required()
+    email: Joi.string()
+      .email()
+      .lowercase()
+      .trim()
+      .max(255)
+      .required()
+      .messages({
+        'string.email': 'Please enter a valid email address',
+        'string.empty': 'Email is required',
+        'any.required': 'Email is required'
+      }),
+
+    username: Joi.string()
+      .trim()
+      .min(2)
+      .max(50)
+      .required()
+      .messages({
+        'string.min': 'Username must be at least 2 characters long',
+        'string.max': 'Username cannot exceed 50 characters',
+        'string.empty': 'Username is required',
+        'any.required': 'Username is required'
+      }),
+
+    password: Joi.string()
+      .min(8)
+      .max(128)
+      .required()
       .pattern(new RegExp('^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)'))
-      .message('Password must contain at least one uppercase letter, one lowercase letter, and one number')
+      .messages({
+        'string.min': 'Password must be at least 8 characters long',
+        'string.max': 'Password cannot exceed 128 characters',
+        'string.pattern.base': 'Password must contain at least one uppercase letter, one lowercase letter, and one number',
+        'string.empty': 'Password is required',
+        'any.required': 'Password is required'
+      })
   }),
-  
+
+  login: Joi.object({
+    email: Joi.string()
+      .email()
+      .lowercase()
+      .trim()
+      .required()
+      .messages({
+        'string.email': 'Please enter a valid email address',
+        'string.empty': 'Email is required',
+        'any.required': 'Email is required'
+      }),
+
+    password: Joi.string()
+      .required()
+      .messages({
+        'string.empty': 'Password is required',
+        'any.required': 'Password is required'
+      })
+  }),
+
   login: Joi.object({
     email: Joi.string().email().lowercase().trim().required(),
     password: Joi.string().required()
   }),
-  
+
   post: Joi.object({
     title: Joi.string().trim().min(1).max(200).required(),
     content: Joi.string().trim().min(1).max(50000).required(),
     isPrivate: Joi.boolean().default(false)
   }),
-  
+
   comment: Joi.object({
     text: Joi.string().trim().min(1).max(1000).required()
   }),
-  
+
   reaction: Joi.object({
     emoji: Joi.string().valid('like', 'heart').required()
   }),
-  
+
   adminUpdate: Joi.object({
     title: Joi.string().trim().min(1).max(200),
     content: Joi.string().trim().min(1).max(50000),
@@ -166,19 +217,19 @@ const schemas = {
 // Validation middleware
 const validate = (schema) => {
   return (req, res, next) => {
-    const { error, value } = schema.validate(req.body, { 
+    const { error, value } = schema.validate(req.body, {
       abortEarly: false,
-      stripUnknown: true 
+      stripUnknown: true
     });
-    
+
     if (error) {
       const errors = error.details.map(detail => detail.message);
-      return res.status(400).json({ 
-        message: 'Validation error', 
-        errors: errors 
+      return res.status(400).json({
+        message: 'Validation error',
+        errors: errors
       });
     }
-    
+
     req.body = value; // Use sanitized values
     next();
   };
@@ -208,13 +259,13 @@ const isAdmin = (user) => user && user.role === 'admin';
 // Enhanced error handler
 const handleError = (res, err, defaultMessage = 'An error occurred') => {
   console.error('Error:', err);
-  
+
   if (process.env.NODE_ENV === 'production') {
     return res.status(500).json({ message: defaultMessage });
   } else {
-    return res.status(500).json({ 
-      message: defaultMessage, 
-      error: err.message 
+    return res.status(500).json({
+      message: defaultMessage,
+      error: err.message
     });
   }
 };
@@ -262,7 +313,7 @@ const auditLog = (action, userId, details = {}) => {
     success: details.success !== false,
     ...details
   };
-  
+
   // In production, send to logging service (e.g., Winston, Loggly)
   console.log('[AUDIT]', JSON.stringify(logEntry));
 };
@@ -277,40 +328,40 @@ app.get('/ping', (req, res) => res.send('pong'));
 app.post('/api/register', authLimiter, validate(schemas.register), async (req, res) => {
   try {
     const { email, username, password } = req.body;
-    
+
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      auditLog('REGISTER_FAILED', null, { 
-        reason: 'email_exists', 
+      auditLog('REGISTER_FAILED', null, {
+        reason: 'email_exists',
         email,
-        ip: req.ip 
+        ip: req.ip
       });
       return res.status(400).json({ message: 'Email already registered' });
     }
-    
+
     // Enhanced bcrypt with 12 rounds
     const salt = await bcrypt.genSalt(12);
     const hashedPassword = await bcrypt.hash(password, salt);
-    
-    const user = new User({ 
-      email, 
-      username, 
-      password: hashedPassword, 
-      role: 'user' 
+
+    const user = new User({
+      email,
+      username,
+      password: hashedPassword,
+      role: 'user'
     });
     await user.save();
-    
-    auditLog('REGISTER_SUCCESS', user._id, { 
-      email, 
+
+    auditLog('REGISTER_SUCCESS', user._id, {
+      email,
       username,
-      ip: req.ip 
+      ip: req.ip
     });
-    
+
     res.status(201).json({ message: 'Registration successful' });
   } catch (err) {
-    auditLog('REGISTER_ERROR', null, { 
+    auditLog('REGISTER_ERROR', null, {
       error: err.message,
-      ip: req.ip 
+      ip: req.ip
     });
     handleError(res, err, 'Registration failed');
   }
@@ -320,33 +371,33 @@ app.post('/api/register', authLimiter, validate(schemas.register), async (req, r
 app.post('/api/setup-admin', authLimiter, async (req, res) => {
   try {
     const { email, secretKey } = req.body;
-    
+
     if (!email || !secretKey) {
       return res.status(400).json({ message: 'Email and secret key required' });
     }
-    
+
     if (secretKey !== process.env.ADMIN_SETUP_KEY) {
-      auditLog('ADMIN_SETUP_FAILED', null, { 
-        reason: 'invalid_key', 
+      auditLog('ADMIN_SETUP_FAILED', null, {
+        reason: 'invalid_key',
         email,
-        ip: req.ip 
+        ip: req.ip
       });
       return res.status(403).json({ message: 'Invalid setup key' });
     }
-    
+
     const user = await User.findOne({ email: email.toLowerCase().trim() });
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
-    
+
     user.role = 'admin';
     await user.save();
-    
-    auditLog('ADMIN_PROMOTED', user._id, { 
+
+    auditLog('ADMIN_PROMOTED', user._id, {
       email,
-      ip: req.ip 
+      ip: req.ip
     });
-    
+
     res.json({ message: 'User promoted to admin' });
   } catch (err) {
     handleError(res, err, 'Admin setup failed');
@@ -357,53 +408,53 @@ app.post('/api/setup-admin', authLimiter, async (req, res) => {
 app.post('/api/login', authLimiter, validate(schemas.login), async (req, res) => {
   try {
     const { email, password } = req.body;
-    
+
     const user = await User.findOne({ email });
     if (!user) {
-      auditLog('LOGIN_FAILED', null, { 
-        reason: 'user_not_found', 
+      auditLog('LOGIN_FAILED', null, {
+        reason: 'user_not_found',
         email,
-        ip: req.ip 
+        ip: req.ip
       });
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
     if (!user.password) {
-      auditLog('LOGIN_FAILED', user._id, { 
-        reason: 'oauth_only', 
+      auditLog('LOGIN_FAILED', user._id, {
+        reason: 'oauth_only',
         email,
-        ip: req.ip 
+        ip: req.ip
       });
       return res.status(400).json({ message: 'Please use Google login' });
     }
 
     const valid = await bcrypt.compare(password, user.password);
     if (!valid) {
-      auditLog('LOGIN_FAILED', user._id, { 
+      auditLog('LOGIN_FAILED', user._id, {
         reason: 'invalid_password',
-        ip: req.ip 
+        ip: req.ip
       });
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
     const token = jwt.sign(
-      { _id: user._id, role: user.role }, 
-      process.env.JWT_SECRET, 
+      { _id: user._id, role: user.role },
+      process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
-    
-    auditLog('LOGIN_SUCCESS', user._id, { 
+
+    auditLog('LOGIN_SUCCESS', user._id, {
       email,
-      ip: req.ip 
+      ip: req.ip
     });
-    
-    res.json({ 
-      token, 
-      user: { 
-        id: user._id, 
-        username: user.username, 
-        role: user.role 
-      } 
+
+    res.json({
+      token,
+      user: {
+        id: user._id,
+        username: user.username,
+        role: user.role
+      }
     });
   } catch (err) {
     handleError(res, err, 'Login failed');
@@ -414,11 +465,11 @@ app.post('/api/login', authLimiter, validate(schemas.login), async (req, res) =>
 app.post('/api/google-login', authLimiter, async (req, res) => {
   try {
     const { token } = req.body;
-    
+
     if (!token) {
       return res.status(400).json({ message: 'Token required' });
     }
-    
+
     const ticket = await googleClient.verifyIdToken({
       idToken: token,
       audience: process.env.GOOGLE_CLIENT_ID
@@ -437,10 +488,10 @@ app.post('/api/google-login', authLimiter, async (req, res) => {
         role: 'user'
       });
       await user.save();
-      
-      auditLog('GOOGLE_REGISTER', user._id, { 
+
+      auditLog('GOOGLE_REGISTER', user._id, {
         email: normalizedEmail,
-        ip: req.ip 
+        ip: req.ip
       });
     } else if (!user.googleId) {
       user.googleId = payload.sub;
@@ -452,10 +503,10 @@ app.post('/api/google-login', authLimiter, async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
-    
-    auditLog('GOOGLE_LOGIN_SUCCESS', user._id, { 
+
+    auditLog('GOOGLE_LOGIN_SUCCESS', user._id, {
       email: normalizedEmail,
-      ip: req.ip 
+      ip: req.ip
     });
 
     res.json({
@@ -463,9 +514,9 @@ app.post('/api/google-login', authLimiter, async (req, res) => {
       user: { id: user._id, username: user.username, role: user.role }
     });
   } catch (error) {
-    auditLog('GOOGLE_LOGIN_FAILED', null, { 
+    auditLog('GOOGLE_LOGIN_FAILED', null, {
       error: error.message,
-      ip: req.ip 
+      ip: req.ip
     });
     handleError(res, error, 'Google authentication failed');
   }
@@ -487,11 +538,11 @@ app.get('/api/posts', async (req, res) => {
         const user = await User.findById(decoded._id);
 
         if (isAdmin(user)) {
-          query = { 
+          query = {
             $or: [
-              { $or: [{ isPrivate: false }, { hiddenByAdmin: true }] }, 
+              { $or: [{ isPrivate: false }, { hiddenByAdmin: true }] },
               { author: decoded._id }
-            ] 
+            ]
           };
         } else {
           query = {
@@ -505,12 +556,12 @@ app.get('/api/posts', async (req, res) => {
         // Invalid token, continue with public query
       }
     }
-    
+
     const posts = await Post.find(query)
       .populate('author', 'username')
       .sort({ createdAt: -1 })
       .limit(100); // Limit results for performance
-      
+
     res.json(posts);
   } catch (err) {
     handleError(res, err, 'Failed to fetch posts');
@@ -536,18 +587,18 @@ app.get('/api/posts/:id', async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
       return res.status(400).json({ message: 'Invalid post ID' });
     }
-    
+
     const post = await Post.findById(req.params.id)
       .populate('author', 'username')
       .populate('comments.user', 'username');
-      
+
     if (!post) {
       return res.status(404).json({ message: 'Post not found' });
     }
 
     const token = req.header('Authorization')?.replace('Bearer ', '');
     let user = null;
-    
+
     if (token) {
       try {
         let cleanToken = token.trim();
@@ -563,21 +614,21 @@ app.get('/api/posts/:id', async (req, res) => {
 
     if (user && isAdmin(user)) {
       if (post.isPrivate && !post.hiddenByAdmin) {
-        return res.status(403).json({ 
-          message: 'Admin cannot view private user posts' 
+        return res.status(403).json({
+          message: 'Admin cannot view private user posts'
         });
       }
       return res.json(post);
     }
-    
+
     if (user && post.author._id.toString() === user._id.toString()) {
       return res.json(post);
     }
-    
+
     if (post.hiddenByAdmin) {
       return res.status(403).json({ message: 'Content removed by admin' });
     }
-    
+
     if (post.isPrivate) {
       return res.status(403).json({ message: 'This post is private' });
     }
@@ -592,22 +643,22 @@ app.get('/api/posts/:id', async (req, res) => {
 app.post('/api/posts', auth, createLimiter, validate(schemas.post), async (req, res) => {
   try {
     const { title, content, isPrivate } = req.body;
-    
+
     const post = new Post({
       title,
       content,
       isPrivate: isPrivate || false,
       author: req.user._id
     });
-    
+
     await post.save();
-    
-    auditLog('POST_CREATED', req.user._id, { 
+
+    auditLog('POST_CREATED', req.user._id, {
       postId: post._id,
       isPrivate,
-      ip: req.ip 
+      ip: req.ip
     });
-    
+
     res.status(201).json(post);
   } catch (err) {
     handleError(res, err, 'Failed to create post');
@@ -620,16 +671,16 @@ app.put('/api/posts/:id', auth, validate(schemas.adminUpdate), async (req, res) 
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
       return res.status(400).json({ message: 'Invalid post ID' });
     }
-    
+
     const user = await User.findById(req.user._id);
     let post;
-    
+
     if (isAdmin(user)) {
       post = await Post.findById(req.params.id);
     } else {
-      post = await Post.findOne({ 
-        _id: req.params.id, 
-        author: req.user._id 
+      post = await Post.findOne({
+        _id: req.params.id,
+        author: req.user._id
       });
     }
 
@@ -646,20 +697,20 @@ app.put('/api/posts/:id', auth, validate(schemas.adminUpdate), async (req, res) 
         if (req.body.takedownReason) {
           post.takedownReason = req.body.takedownReason;
         }
-        
-        auditLog('POST_TAKEDOWN', req.user._id, { 
+
+        auditLog('POST_TAKEDOWN', req.user._id, {
           postId: post._id,
           reason: req.body.takedownReason,
-          ip: req.ip 
+          ip: req.ip
         });
       } else if (req.body.hiddenByAdmin === false) {
         post.hiddenByAdmin = false;
         post.takedownReason = null;
         post.isPrivate = false;
-        
-        auditLog('POST_RESTORED', req.user._id, { 
+
+        auditLog('POST_RESTORED', req.user._id, {
           postId: post._id,
-          ip: req.ip 
+          ip: req.ip
         });
       }
     } else {
@@ -667,7 +718,7 @@ app.put('/api/posts/:id', auth, validate(schemas.adminUpdate), async (req, res) 
         post.isPrivate = req.body.isPrivate;
       }
     }
-    
+
     await post.save();
     res.json(post);
   } catch (err) {
@@ -681,26 +732,26 @@ app.delete('/api/posts/:id', auth, async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
       return res.status(400).json({ message: 'Invalid post ID' });
     }
-    
+
     const user = await User.findById(req.user._id);
-    
+
     if (isAdmin(user)) {
       await Post.findByIdAndDelete(req.params.id);
     } else {
-      const post = await Post.findOneAndDelete({ 
-        _id: req.params.id, 
-        author: req.user._id 
+      const post = await Post.findOneAndDelete({
+        _id: req.params.id,
+        author: req.user._id
       });
       if (!post) {
         return res.status(403).json({ message: 'Not authorized' });
       }
     }
-    
-    auditLog('POST_DELETED', req.user._id, { 
+
+    auditLog('POST_DELETED', req.user._id, {
       postId: req.params.id,
-      ip: req.ip 
+      ip: req.ip
     });
-    
+
     res.json({ message: 'Post deleted' });
   } catch (err) {
     handleError(res, err, 'Failed to delete post');
@@ -713,28 +764,28 @@ app.put('/api/posts/:id/react', auth, validate(schemas.reaction), async (req, re
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
       return res.status(400).json({ message: 'Invalid post ID' });
     }
-    
+
     const { emoji } = req.body;
     const post = await Post.findById(req.params.id);
-    
+
     if (!post) {
       return res.status(404).json({ message: 'Post not found' });
     }
-    
+
     if (!post.reactions) post.reactions = [];
-    
+
     const existingIndex = post.reactions.findIndex(
       r => r.user.toString() === req.user._id && r.emoji === emoji
     );
-    
+
     if (existingIndex > -1) {
       post.reactions.splice(existingIndex, 1);
     } else {
       post.reactions.push({ user: req.user._id, emoji });
     }
-    
+
     await post.save();
-    
+
     const updatedPost = await Post.findById(req.params.id)
       .populate('author', 'username');
     res.json(updatedPost);
@@ -749,19 +800,19 @@ app.post('/api/posts/:id/comment', auth, validate(schemas.comment), async (req, 
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
       return res.status(400).json({ message: 'Invalid post ID' });
     }
-    
+
     const { text } = req.body;
     const post = await Post.findById(req.params.id);
-    
+
     if (!post) {
       return res.status(404).json({ message: 'Post not found' });
     }
-    
+
     if (!post.comments) post.comments = [];
     post.comments.push({ user: req.user._id, text });
-    
+
     await post.save();
-    
+
     const updatedPost = await Post.findById(req.params.id)
       .populate('author', 'username')
       .populate('comments.user', 'username');
@@ -774,30 +825,30 @@ app.post('/api/posts/:id/comment', auth, validate(schemas.comment), async (req, 
 // --- DELETE COMMENT ---
 app.delete('/api/posts/:id/comment/:commentId', auth, async (req, res) => {
   try {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id) || 
-        !mongoose.Types.ObjectId.isValid(req.params.commentId)) {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id) ||
+      !mongoose.Types.ObjectId.isValid(req.params.commentId)) {
       return res.status(400).json({ message: 'Invalid ID' });
     }
-    
+
     const post = await Post.findById(req.params.id);
     if (!post) {
       return res.status(404).json({ message: 'Post not found' });
     }
-    
+
     const comment = post.comments.id(req.params.commentId);
     if (!comment) {
       return res.status(404).json({ message: 'Comment not found' });
     }
-    
+
     const user = await User.findById(req.user._id);
-    
+
     if (comment.user.toString() !== req.user._id && !isAdmin(user)) {
       return res.status(403).json({ message: 'Not authorized' });
     }
-    
+
     comment.deleteOne();
     await post.save();
-    
+
     const updatedPost = await Post.findById(req.params.id)
       .populate('author', 'username')
       .populate('comments.user', 'username');
@@ -819,14 +870,14 @@ app.use((req, res) => {
 // ============================================
 app.use((err, req, res, next) => {
   console.error('Global Error:', err);
-  
+
   if (process.env.NODE_ENV === 'production') {
     res.status(500).json({ message: 'Internal server error' });
   } else {
-    res.status(500).json({ 
-      message: 'Internal server error', 
+    res.status(500).json({
+      message: 'Internal server error',
       error: err.message,
-      stack: err.stack 
+      stack: err.stack
     });
   }
 });
